@@ -13,3 +13,20 @@ export interface Notification {
   from?: string
   href?: string
 }
+
+export interface User {
+  id: number
+  username: string
+  avatar: string
+  totalGames: number
+  volume: number
+  games24h: number
+}
+
+export interface LeaderboardData {
+  users: User[]
+  currentPage: number
+  usersPerPage: number
+  totalPages: number
+  totalRecords: number
+}
