@@ -1,57 +1,48 @@
-import React, { useState } from 'react'
-import { ChevronDownIcon } from 'lucide-react'
+'use client'
+import React from 'react'
+import { Dropdown } from '@/components/Dropdown'
 import { AddressInput } from '@/components/AddressInput'
+import Leaderboard from '@/components/Leaderboard'
+import { PassportResponse } from '@/utils/types'
 
-const AirdropPage = () => {
-  const [selectedOption, setSelectedOption] = useState('')
-  const [tokenAddress, setTokenAddress] = useState('')
+interface AirdropPageProps {
+  initialData: PassportResponse
+}
 
+const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const options = ['Airdrop to all holders', 'Airdrop to specific addresses', 'Airdrop based on token balance']
+  const criteria = ['Total Games', 'Volume', '24h Games']
 
   return (
-    <div className='flex flex-col md:flex-row h-full min-h-screen bg-gray-100'>
-      {/* Left side - Dropdown */}
-      <div className='w-full md:w-1/2 p-6 bg-white shadow-md'>
-        <h2 className='text-2xl font-bold mb-4'>Airdrop Options</h2>
-        <div className='relative'>
-          <select
-            value={selectedOption}
-            onChange={(e) => setSelectedOption(e.target.value)}
-            className='appearance-none w-full bg-white border border-gray-300 rounded-md py-2 px-4 pr-8 leading-tight focus:outline-none focus:border-blue-500'>
-            <option value='' disabled>
-              Select an option
-            </option>
-            {options.map((option, index) => (
-              <option key={index} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <div className='pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700'>
-            <ChevronDownIcon size={20} />
+    <div className='flex flex-col min-h-screen bg-gray-100' style={{ color: '#0052FF' }}>
+      <div className='w-full p-6 bg-white shadow-md'>
+        <div className='flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4'>
+          <Dropdown label='Airdrop Option' options={options} onChange={(value) => console.log(value)} />
+          <Dropdown label='Airdrop Criteria' options={criteria} onChange={(value) => console.log(value)} />
+          <div className='w-full lg:w-2/5 flex flex-col sm:flex-row items-end gap-2'>
+            <div className='w-full sm:w-3/4'>
+              <label className='block text-sm font-medium mb-1'>Token to Airdrop</label>
+              <AddressInput
+                onRecipientChange={(address, isValid) => console.log(address)}
+                placeholder='Enter token address'
+              />
+            </div>
+            <button
+              className='w-full sm:w-1/4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-2 sm:mt-0'
+              onClick={() => console.log('Airdrop initiated')}>
+              Airdrop
+            </button>
           </div>
         </div>
-        {selectedOption && (
-          <div className='mt-4'>
-            <h3 className='text-lg font-semibold mb-2'>Selected Option:</h3>
-            <p>{selectedOption}</p>
-          </div>
-        )}
       </div>
 
-      {/* Right side - Token Address Input */}
-      <div className='w-full md:w-1/2 p-6 bg-gray-50'>
-        <h2 className='text-2xl font-bold mb-4'>Token to Airdrop</h2>
-        <AddressInput
-          onRecipientChange={(address, isValid) => setTokenAddress(address)}
-          placeholder='Enter token address'
+      <div className='w-full p-6 bg-gray-50 flex-grow'>
+        <Leaderboard
+          title='Airdrop Leaderboard'
+          defaultSortField='skills_score'
+          defaultSortOrder='desc'
+          initialData={initialData}
         />
-        {tokenAddress && (
-          <div className='mt-4'>
-            <h3 className='text-lg font-semibold mb-2'>Entered Token Address:</h3>
-            <p className='break-all'>{tokenAddress}</p>
-          </div>
-        )}
       </div>
     </div>
   )

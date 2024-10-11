@@ -15,18 +15,35 @@ export interface Notification {
 }
 
 export interface User {
-  id: number
-  username: string
-  avatar: string
-  totalGames: number
-  volume: number
-  games24h: number
+  activity_score: number
+  calculating_score: boolean
+  created_at: string
+  human_checkmark: boolean
+  identity_score: number
+  last_calculated_at: string
+  main_wallet: string
+  main_wallet_changed_at: string | null
+  passport_id: number
+  passport_profile: {
+    bio: string
+    display_name: string
+    image_url: string
+    location: string | null
+    name: string
+    tags: string[]
+  }
+  score: number
+  skills_score: number
+  socials_calculated_at: string
+  verified: boolean
+  verified_wallets: string[]
 }
 
-export interface LeaderboardData {
-  users: User[]
-  currentPage: number
-  usersPerPage: number
-  totalPages: number
-  totalRecords: number
+export interface PassportResponse {
+  passports: User[]
+  pagination: {
+    current_page: number
+    last_page: number
+    total: number
+  }
 }
