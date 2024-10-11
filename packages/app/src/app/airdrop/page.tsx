@@ -11,7 +11,7 @@ interface AirdropPageProps {
 
 const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const options = ['Airdrop to all holders', 'Airdrop to specific addresses', 'Airdrop based on token balance']
-  const criteria = ['Total Games', 'Volume', '24h Games']
+  const criteria = ['Skills Score > 80', 'Activity Score > 60', 'Identity Score >= 80']
 
   return (
     <div className='flex flex-col min-h-screen bg-gray-100' style={{ color: '#0052FF' }}>
@@ -22,8 +22,14 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
           <div className='w-full lg:w-2/5 flex flex-col sm:flex-row items-end gap-2'>
             <div className='w-full sm:w-3/4'>
               <label className='block text-sm font-medium mb-1'>Token to Airdrop</label>
-              <AddressInput
+              {/* <AddressInput
                 onRecipientChange={(address, isValid) => console.log(address)}
+                placeholder='Enter token address'
+              /> */}
+              <input
+                type='text'
+                className='w-full border border-gray-300 rounded py-2 px-4'
+                onChange={(e) => console.log(e.target.value)}
                 placeholder='Enter token address'
               />
             </div>
@@ -38,9 +44,9 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
 
       <div className='w-full p-6 bg-gray-50 flex-grow'>
         <Leaderboard
-          title='Airdrop Leaderboard'
-          defaultSortField='skills_score'
-          defaultSortOrder='desc'
+          //   title='Airdrop Leaderboard'
+          //   defaultSortField='skills_score'
+          //   defaultSortOrder='desc'
           initialData={initialData}
         />
       </div>
