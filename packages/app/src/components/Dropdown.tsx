@@ -4,10 +4,11 @@ import { ChevronDownIcon } from 'lucide-react'
 interface DropdownProps {
   label: string
   options: string[]
+  disabledOptions?: string[]
   onChange: (value: string) => void
 }
 
-export const Dropdown = ({ label, options, onChange }: DropdownProps) => (
+export const Dropdown = ({ label, options, disabledOptions = [], onChange }: DropdownProps) => (
   <div className='w-full lg:w-1/4'>
     <label className='block text-sm font-medium mb-1'>{label}</label>
     <div className='relative'>
@@ -19,7 +20,11 @@ export const Dropdown = ({ label, options, onChange }: DropdownProps) => (
           Select an option
         </option>
         {options.map((option, index) => (
-          <option key={index} value={option} style={{ color: '#0052FF' }}>
+          <option
+            key={index}
+            value={option}
+            style={{ color: disabledOptions.includes(option) ? '#A0AEC0' : '#0052FF' }}
+            disabled={disabledOptions.includes(option)}>
             {option}
           </option>
         ))}

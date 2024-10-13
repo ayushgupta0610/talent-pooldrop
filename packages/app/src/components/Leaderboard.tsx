@@ -36,18 +36,16 @@ const StyledTable = styled(Table)(({ theme }) => ({
 
 interface LeaderboardProps {
   title?: string
-  // defaultSortField?: 'skills_score' | 'identity_score' | 'activity_score' // Add default sort field prop
-  // defaultSortOrder?: 'asc' | 'desc' // Add default sort order prop
-  initialData?: PassportResponse // Add initial data prop
+  initialData?: PassportResponse
+  onAddressesChange?: (addresses: string[]) => void // Step 1: Add prop for address change
 }
 
 const usersPerPage = 25
 
 export default function Leaderboard({
   title,
-  // defaultSortOrder,
-  // defaultSortField,
-  initialData, // Accept initial data prop
+  initialData,
+  onAddressesChange, // Step 1: Destructure new prop
 }: LeaderboardProps) {
   const [currentPage, setCurrentPage] = useState(initialData?.pagination?.current_page || 1)
   const [users, setUsers] = useState<User[]>(initialData?.passports || []) // Use initial data if available
@@ -90,6 +88,12 @@ export default function Leaderboard({
     fetchUsers()
   }, [currentPage])
 
+  useEffect(() => {
+    if (onAddressesChange) {
+      onAddressesChange(users.map((user) => user.main_wallet)) // Step 2: Update addresses when users change
+    }
+  }, [users, onAddressesChange]) // Add onAddressesChange to dependencies
+
   const formatWalletAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}` // Format wallet address
   }
@@ -102,11 +106,17 @@ export default function Leaderboard({
           <TableRow>
             <TableCell align='center'>Passport ID</TableCell>
             <TableCell align='center'>Username</TableCell>
-            <TableCell align='center'>Bio</TableCell>
+            <TableCell
+              align='center'
+              style={{ maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              Bio
+            </TableCell>
             {/* <TableCell align='right'>Tags</TableCell> */}
             <TableCell align='center'>Location</TableCell>
             <TableCell align='center'>Wallet Address</TableCell>
-            <TableCell align='right'>Verifiable Skills Score</TableCell>
+            <TableCell align='right'>Skills Score</TableCell>
+            <TableCell align='right'>Activity Score</TableCell>
+            <TableCell align='right'>Identity Score</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -146,7 +156,11 @@ export default function Leaderboard({
                   />
                 </div>
               </TableCell>
-              <TableCell align='center'>{user.passport_profile.bio}</TableCell>
+              <TableCell
+                align='center'
+                style={{ maxWidth: '25em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {user.passport_profile.bio}
+              </TableCell>
               {/* <TableCell align='right'>{user.passport_profile.tags}</TableCell> */}
               <TableCell align='center'>{user.passport_profile.location}</TableCell>
               <TableCell align='center'>
@@ -160,6 +174,8 @@ export default function Leaderboard({
                 </a>
               </TableCell>
               <TableCell align='right'>{user.skills_score}</TableCell>
+              <TableCell align='right'>{user.activity_score}</TableCell>
+              <TableCell align='right'>{user.identity_score}</TableCell>
             </TableRow>
           ))}
         </TableBody>

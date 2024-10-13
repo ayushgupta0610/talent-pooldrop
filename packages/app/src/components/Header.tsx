@@ -13,7 +13,7 @@ const Header = () => {
           <div className='flex items-center space-x-4'>
             {' '}
             <nav>
-              <ul className='flex space-x-4'>
+              {/* <ul className='flex space-x-4'>
                 <li>
                   <Link href='/dashboard' className='hover:text-blue-200'>
                     Dashboard
@@ -29,7 +29,7 @@ const Header = () => {
                     Profiles
                   </Link>
                 </li>
-              </ul>
+              </ul> */}
             </nav>
             <Connect />
           </div>
