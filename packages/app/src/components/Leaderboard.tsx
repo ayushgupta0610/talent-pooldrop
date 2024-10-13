@@ -90,6 +90,10 @@ export default function Leaderboard({
     fetchUsers()
   }, [currentPage])
 
+  const formatWalletAddress = (address: string) => {
+    return `${address.slice(0, 6)}...${address.slice(-4)}` // Format wallet address
+  }
+
   return (
     <StyledTableContainer>
       <h2 style={{ color: '#0052FF' }}>{title}</h2>
@@ -98,9 +102,11 @@ export default function Leaderboard({
           <TableRow>
             <TableCell align='center'>Passport ID</TableCell>
             <TableCell align='center'>Username</TableCell>
-            <TableCell align='right'>Skills Score</TableCell>
-            <TableCell align='right'>Activity Score</TableCell>
-            <TableCell align='right'>Identity Score</TableCell>
+            <TableCell align='center'>Bio</TableCell>
+            {/* <TableCell align='right'>Tags</TableCell> */}
+            <TableCell align='center'>Location</TableCell>
+            <TableCell align='center'>Wallet Address</TableCell>
+            <TableCell align='right'>Verifiable Skills Score</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -140,9 +146,20 @@ export default function Leaderboard({
                   />
                 </div>
               </TableCell>
+              <TableCell align='center'>{user.passport_profile.bio}</TableCell>
+              {/* <TableCell align='right'>{user.passport_profile.tags}</TableCell> */}
+              <TableCell align='center'>{user.passport_profile.location}</TableCell>
+              <TableCell align='center'>
+                <a
+                  href={`https://basescan.org/address/${user.main_wallet}`}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  style={{ textDecoration: 'none', color: '#0052FF' }} // Style link
+                >
+                  {formatWalletAddress(user.main_wallet)}
+                </a>
+              </TableCell>
               <TableCell align='right'>{user.skills_score}</TableCell>
-              <TableCell align='right'>{user.activity_score}</TableCell>
-              <TableCell align='right'>{user.identity_score}</TableCell>
             </TableRow>
           ))}
         </TableBody>
