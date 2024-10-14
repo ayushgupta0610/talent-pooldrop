@@ -41,8 +41,8 @@
     "react-icons": "^4.11.0",
     "react-toastify": "^10.0.5",
     "siwe": "^2.3.2",
-    "viem": "^2.21.19",
-    "wagmi": "^2.12.17"
+    "viem": "^2.21.24",
+    "wagmi": "^0.9.0"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",
