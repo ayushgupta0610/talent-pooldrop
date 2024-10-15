@@ -183,7 +183,7 @@ export default function Leaderboard({
           <TableRow>
             <TablePagination
               rowsPerPageOptions={[25]}
-              colSpan={5}
+              colSpan={8}
               count={totalRecords}
               rowsPerPage={usersPerPage}
               page={currentPage - 1}

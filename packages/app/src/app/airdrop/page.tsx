@@ -1,9 +1,14 @@
-'use client'
-import React from 'react'
+"use client"
+import React, { useState, useEffect } from 'react'
 import { Dropdown } from '@/components/Dropdown'
 import { AddressInput } from '@/components/AddressInput'
 import Leaderboard from '@/components/Leaderboard'
 import { PassportResponse, User } from '@/utils/types'
+import { useAccount, useWriteContract, useReadContract } from 'wagmi'
+import { parseUnits } from 'viem'
+import { bulkDisburseABI } from '@/utils/abi'
+import { erc20Abi } from 'viem'
+import { useNotifications } from '@/context/Notifications'
 
 interface AirdropPageProps {
   initialData: PassportResponse
@@ -13,12 +18,30 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const options = ['Based on score', 'Based on location', 'Based on profile']
   const criteria = ['Skills Score >= 80', 'Activity Score >= 60', 'Identity Score >= 80']
 
-  // Step 1: Add state for addresses and selected criteria
-  const [addresses, setAddresses] = React.useState<string[]>([])
-  const [selectedCriteria, setSelectedCriteria] = React.useState<string>('')
+  const [addresses, setAddresses] = useState<string[]>([])
+  const [selectedCriteria, setSelectedCriteria] = useState<string>('')
+  const [tokenAddress, setTokenAddress] = useState<string>('')
+  const [tokenAmount, setTokenAmount] = useState<string>('')
+  const { address } = useAccount()
+  const { Add: addNotification } = useNotifications()
+
+  const BULK_DISBURSE_ADDRESS = '0x32dA4cAaAAd4d4805Df3b044b206Df2ad2eBadFd' // Replace with actual contract address
+
+  const { data: tokenDecimals } = useReadContract({
+    address: tokenAddress as `0x${string}`,
+    abi: erc20Abi,
+    functionName: 'decimals',
+    enabled: Boolean(tokenAddress),
+  })
+
+  const { writeContract, isPending, isSuccess, isError, error } = useWriteContract()
 
   const handleAirdrop = () => {
-    // Step 3: Access addresses and scores on button click
+    if (!tokenAddress || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
+      addNotification('Missing required information for airdrop', { type: 'error' })
+      return
+    }
+
     const filteredUsers = initialData.passports.filter((user) => {
       switch (selectedCriteria) {
         case criteria[0]:
@@ -32,15 +55,31 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
       }
     })
 
-    const airdropData = filteredUsers.map((user) => ({
-      address: user.main_wallet,
-      skillsScore: user.skills_score,
-      activityScore: user.activity_score,
-      identityScore: user.identity_score,
-    }))
+    const recipients = filteredUsers.map((user) => user.main_wallet)
+    const amounts = recipients.map(() => parseUnits(tokenAmount, tokenDecimals))
+    const totalAmount = parseUnits((Number(tokenAmount) * recipients.length).toString(), tokenDecimals)
 
-    console.log('Airdrop initiated with data:', airdropData)
+    try {
+      writeContract({
+        address: BULK_DISBURSE_ADDRESS,
+        abi: bulkDisburseABI,
+        functionName: 'bulkDisburse',
+        args: [tokenAddress, recipients, amounts, totalAmount],
+      })
+      addNotification('Airdrop initiated successfully', { type: 'success' })
+    } catch (error) {
+      console.error('Error during bulk disburse:', error)
+      addNotification('Error initiating airdrop', { type: 'error' })
+    }
   }
+
+  // useEffect(() => {
+  //   if (isSuccess) {
+  //     addNotification('Airdrop initiated successfully', { type: 'success' })
+  //   } else if (isError) {
+  //     addNotification(`Airdrop failed: ${error?.message}`, { type: 'error' })
+  //   }
+  // }, [isSuccess, isError, error, addNotification])
 
   return (
     <div className='flex flex-col min-h-screen bg-gray-100' style={{ color: '#0052FF' }}>
@@ -50,27 +89,39 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
             label='Airdrop Option'
             options={options}
             onChange={(value) => console.log(value)}
-            disabledOptions={options.slice(1)} // Disable other options
+            disabledOptions={options.slice(1)}
           />
           <Dropdown
             label='Airdrop Criteria'
             options={criteria}
-            onChange={(value) => setSelectedCriteria(value)} // Step 2: Update selected criteria
+            onChange={(value) => setSelectedCriteria(value)}
           />
           <div className='w-full lg:w-2/5 flex flex-col sm:flex-row items-end gap-2'>
-            <div className='w-full sm:w-3/4'>
+            <div className='w-full sm:w-2/3'>
               <label className='block text-sm font-medium mb-1'>Token to Airdrop</label>
               <input
                 type='text'
                 className='w-full border border-gray-300 rounded py-2 px-4'
-                onChange={(e) => console.log(e.target.value)}
+                value={tokenAddress}
+                onChange={(e) => setTokenAddress(e.target.value)}
                 placeholder='Enter token address'
+              />
+            </div>
+            <div className='w-full sm:w-1/3'>
+              <label className='block text-sm font-medium mb-1'>Token Amount</label>
+              <input
+                type='number'
+                className='w-full border border-gray-300 rounded py-2 px-4'
+                value={tokenAmount}
+                onChange={(e) => setTokenAmount(e.target.value)}
+                placeholder='Per user'
               />
             </div>
             <button
               className='w-full sm:w-1/4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-2 sm:mt-0'
-              onClick={handleAirdrop}>
-              Airdrop
+              onClick={handleAirdrop}
+              disabled={isPending}>
+              {isPending ? 'Processing...' : 'Airdrop'}
             </button>
           </div>
         </div>

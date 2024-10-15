@@ -12,7 +12,6 @@ interface IERC20 {
 
 contract BulkDisburse is ReentrancyGuard {
     error UnauthorisedAccess();
-    error DisburseFailed();
     error ToValueLengthMismatch();
     error TransferFailed();
     error WithdrawNativeTokenFailed();
@@ -51,15 +50,12 @@ contract BulkDisburse is ReentrancyGuard {
         }
     }
 
-    function depositForBulkDisburse(IERC20 token, uint256 totalValue) external onlyOwner nonReentrant {
-        require(token.transferFrom(msg.sender, address(this), totalValue), DisburseFailed());
-    }
-
-    function bulkDisburse(IERC20 token, address[] calldata to, uint256[] calldata value)
+    function bulkDisburse(IERC20 token, address[] calldata to, uint256[] calldata value, uint256 totalValue)
         external
         onlyOwner
         nonReentrant
     {
+        token.transferFrom(msg.sender, address(this), totalValue);
         _bulkDisburse(token, to, value);
     }
 
