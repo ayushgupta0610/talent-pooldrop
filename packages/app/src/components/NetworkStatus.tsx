@@ -9,7 +9,7 @@ export function NetworkStatus() {
   const block = useBlockNumber({ watch: true })
   const { chain } = useAccount()
   const explorerUrl = chain?.blockExplorers?.default.url
-  const networkName = chain?.name ?? 'Ethereum'
+  const networkName = chain?.name ?? 'Base'
   const color = GetNetworkColor(networkName, 'bgVariant')
 
   return (

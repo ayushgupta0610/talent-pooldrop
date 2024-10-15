@@ -77,8 +77,7 @@ async function sortData(prefix: string, sortField: string, order: 'asc' | 'desc'
 
   const results = await Promise.all(allKeys.map(async (key) => redis.hgetall(`${prefix}:${key}`)))
 
-  return results.sort((a: YourType, b: YourType) => {
-    // Specify the correct type
+  return results.sort((a, b) => {
     if (a[sortField] < b[sortField]) return order === 'asc' ? -1 : 1
     if (a[sortField] > b[sortField]) return order === 'asc' ? 1 : -1
     return 0

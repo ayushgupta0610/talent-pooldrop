@@ -4,7 +4,6 @@ import { fetchAndStoreInRedis, searchData, sortData } from '@/lib/redisOperation
 import 'dotenv/config'
 
 export async function GET(request: Request) {
-  console.log('We entered here')
   // Fetch the data from https://api.talentprotocol.com/api/v2/passports?page=1
   const url = new URL(request.url)
   const page = parseInt(url.searchParams.get('currentPage') || '1', 10)

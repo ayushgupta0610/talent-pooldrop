@@ -5,9 +5,9 @@ import { AddressInput } from '@/components/AddressInput'
 import Leaderboard from '@/components/Leaderboard'
 import { PassportResponse, User } from '@/utils/types'
 import { useAccount, useWriteContract, useReadContract } from 'wagmi'
-import { parseUnits } from 'viem'
+import { parseUnits, formatUnits } from 'viem'
 import { bulkDisburseABI } from '@/utils/abi'
-import { erc20Abi } from 'viem'
+import { erc20Abi, maxUint256 } from 'viem'
 import { useNotifications } from '@/context/Notifications'
 
 interface AirdropPageProps {
@@ -31,12 +31,20 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     address: tokenAddress as `0x${string}`,
     abi: erc20Abi,
     functionName: 'decimals',
-    enabled: Boolean(tokenAddress),
+    // enabled: Boolean(tokenAddress),
+  })
+
+  const { data: allowance, refetch: refetchAllowance } = useReadContract({
+    address: tokenAddress as `0x${string}`,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: [address!, BULK_DISBURSE_ADDRESS],
+    // enabled: Boolean(tokenAddress) && Boolean(address),
   })
 
   const { writeContract, isPending, isSuccess, isError, error } = useWriteContract()
 
-  const handleAirdrop = () => {
+  const handleAirdrop = async () => {
     if (!tokenAddress || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
       addNotification('Missing required information for airdrop', { type: 'error' })
       return
@@ -59,6 +67,25 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     const amounts = recipients.map(() => parseUnits(tokenAmount, tokenDecimals))
     const totalAmount = parseUnits((Number(tokenAmount) * recipients.length).toString(), tokenDecimals)
 
+    // Check if approval is needed
+    if (allowance && BigInt(allowance) < BigInt(totalAmount)) {
+      try {
+        await writeContract({
+          address: tokenAddress as `0x${string}`,
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [BULK_DISBURSE_ADDRESS, maxUint256],
+        })
+        addNotification('Approval successful. Please confirm the airdrop transaction.', { type: 'success' })
+        await refetchAllowance()
+      } catch (error) {
+        console.error('Error during token approval:', error)
+        addNotification('Error approving token spend', { type: 'error' })
+        return
+      }
+    }
+
+    // Proceed with airdrop
     try {
       writeContract({
         address: BULK_DISBURSE_ADDRESS,

@@ -1,9 +1,9 @@
-export const SITE_EMOJI = '⚡'
-export const SITE_NAME = 'Nexth'
-export const SITE_INFO = 'Quickly ship Web3 Apps'
+export const SITE_EMOJI = '🚀'
+export const SITE_NAME = 'Airdrop Tool'
+export const SITE_INFO = 'Developed by Ayush Gupta'
 export const SITE_DESCRIPTION =
-  'A Next.js + Ethereum starter kit with Viem, Wagmi, Web3Modal, SIWE, Tailwind, daisyUI and more!'
-export const SITE_URL = 'https://nexth.vercel.app'
+  'An airdrop tool making use of the Talent Protocol to distribute tokens to users based on their activity, skills, and identity scores.'
+export const SITE_URL = 'https://vercel.app'
 
-export const SOCIAL_TWITTER = 'wslyvh'
-export const SOCIAL_GITHUB = 'wslyvh/nexth'
+export const SOCIAL_TWITTER = 'ayushgupta0610'
+export const SOCIAL_GITHUB = 'ayushgupta0610/airdrop-tool'
