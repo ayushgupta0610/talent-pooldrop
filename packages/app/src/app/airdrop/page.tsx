@@ -80,7 +80,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     const recipients = filteredUsers.map((user) => user.main_wallet)
     const amounts = recipients.map(() => parseUnits(tokenAmount, tokenDecimals))
     const totalAmount = parseUnits((Number(tokenAmount) * recipients.length).toString(), tokenDecimals)
-
+   
     try {
       writeContract({
         address: BULK_DISBURSE_ADDRESS,
