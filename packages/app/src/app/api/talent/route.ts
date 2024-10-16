@@ -24,21 +24,21 @@ export async function GET(request: Request) {
     const page = parseInt(url.searchParams.get('currentPage') || '1', 10)
     const redisKey = `talent:page:${page}`
 
-    console.log('Fetching data for page:', page);
+    // console.log('Fetching data for page:', page);
 
     // Try to get data from Redis
-    const cachedData = await redis.get(redisKey)
-    if (cachedData) {
-      console.log('Cache hit. Data from Redis:', cachedData);
-      const parsedData = safeJsonParse(cachedData as string)
-      if (parsedData) {
-        return NextResponse.json(parsedData)
-      } else {
-        console.log('Failed to parse cached data, fetching from Supabase instead');
-      }
-    } else {
-      console.log('Cache miss. Fetching from Supabase.');
-    }
+    // const cachedData = await redis.get(redisKey)
+    // if (cachedData) {
+    //   console.log('Cache hit. Data from Redis:', cachedData);
+    //   const parsedData = safeJsonParse(cachedData as string)
+    //   if (parsedData) {
+    //     return NextResponse.json(parsedData)
+    //   } else {
+    //     console.log('Failed to parse cached data, fetching from Supabase instead');
+    //   }
+    // } else {
+    //   console.log('Cache miss. Fetching from Supabase.');
+    // }
 
     // Fetch from Supabase
     const { data, error, count } = await supabase
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Failed to fetch data from database' }, { status: 500 })
     }
 
-    console.log('Raw data from Supabase:', JSON.stringify(data, null, 2));
+    // console.log('Raw data from Supabase:', JSON.stringify(data, null, 2));
 
     const passports: User[] = data.map(user => {
       let passport_profile = user.passport_profile;
@@ -83,12 +83,12 @@ export async function GET(request: Request) {
       }
     }
 
-    console.log('Processed response:', JSON.stringify(response, null, 2));
+    // console.log('Processed response:', JSON.stringify(response, null, 2));
 
     // Cache the data in Redis
     const stringifiedResponse = JSON.stringify(response);
     console.log('Storing in Redis:', stringifiedResponse);
-    await redis.set(redisKey, stringifiedResponse, { ex: 3600 }) // Cache for 1 hour
+    // await redis.set(redisKey, stringifiedResponse, { ex: 3600 }) // Cache for 1 hour
 
     return NextResponse.json(response)
   } catch (error) {
