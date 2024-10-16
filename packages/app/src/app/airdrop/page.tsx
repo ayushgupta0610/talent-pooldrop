@@ -5,9 +5,9 @@ import { AddressInput } from '@/components/AddressInput'
 import Leaderboard from '@/components/Leaderboard'
 import { PassportResponse, User } from '@/utils/types'
 import { useAccount, useWriteContract, useReadContract } from 'wagmi'
-import { parseUnits, formatUnits } from 'viem'
+import { parseUnits } from 'viem'
 import { bulkDisburseABI } from '@/utils/abi'
-import { erc20Abi, maxUint256 } from 'viem'
+import { erc20Abi } from 'viem'
 import { useNotifications } from '@/context/Notifications'
 
 interface AirdropPageProps {
@@ -22,10 +22,17 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const [selectedCriteria, setSelectedCriteria] = useState<string>('')
   const [tokenAddress, setTokenAddress] = useState<string>('')
   const [tokenAmount, setTokenAmount] = useState<string>('')
+  const [users, setUsers] = useState<User[]>(initialData?.passports || [])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalRecords, setTotalRecords] = useState(0)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [sortField, setSortField] = useState('')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+
   const { address } = useAccount()
   const { Add: addNotification } = useNotifications()
 
-  const BULK_DISBURSE_ADDRESS = '0x32dA4cAaAAd4d4805Df3b044b206Df2ad2eBadFd' // Replace with actual contract address
+  const BULK_DISBURSE_ADDRESS = '0x1234567890123456789012345678901234567890' // Replace with actual contract address
 
   const { data: tokenDecimals } = useReadContract({
     address: tokenAddress as `0x${string}`,
@@ -34,23 +41,30 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     // enabled: Boolean(tokenAddress),
   })
 
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: tokenAddress as `0x${string}`,
-    abi: erc20Abi,
-    functionName: 'allowance',
-    args: [address!, BULK_DISBURSE_ADDRESS],
-    // enabled: Boolean(tokenAddress) && Boolean(address),
-  })
-
   const { writeContract, isPending, isSuccess, isError, error } = useWriteContract()
 
-  const handleAirdrop = async () => {
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(`/api/talent?currentPage=${currentPage}&search=${searchTerm}&sortField=${sortField}&sortOrder=${sortOrder}`)
+        if (!res.ok) throw new Error('Failed to fetch data')
+        const data: PassportResponse = await res.json()
+        setUsers(data.passports)
+        setTotalRecords(data.pagination.total)
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      }
+    }
+    fetchUsers()
+  }, [currentPage, searchTerm, sortField, sortOrder])
+
+  const handleAirdrop = () => {
     if (!tokenAddress || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
       addNotification('Missing required information for airdrop', { type: 'error' })
       return
     }
 
-    const filteredUsers = initialData.passports.filter((user) => {
+    const filteredUsers = users.filter((user) => {
       switch (selectedCriteria) {
         case criteria[0]:
           return user.skills_score >= 80
@@ -67,25 +81,6 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     const amounts = recipients.map(() => parseUnits(tokenAmount, tokenDecimals))
     const totalAmount = parseUnits((Number(tokenAmount) * recipients.length).toString(), tokenDecimals)
 
-    // Check if approval is needed
-    if (allowance && BigInt(allowance) < BigInt(totalAmount)) {
-      try {
-        await writeContract({
-          address: tokenAddress as `0x${string}`,
-          abi: erc20Abi,
-          functionName: 'approve',
-          args: [BULK_DISBURSE_ADDRESS, maxUint256],
-        })
-        addNotification('Approval successful. Please confirm the airdrop transaction.', { type: 'success' })
-        await refetchAllowance()
-      } catch (error) {
-        console.error('Error during token approval:', error)
-        addNotification('Error approving token spend', { type: 'error' })
-        return
-      }
-    }
-
-    // Proceed with airdrop
     try {
       writeContract({
         address: BULK_DISBURSE_ADDRESS,
@@ -93,20 +88,19 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
         functionName: 'bulkDisburse',
         args: [tokenAddress, recipients, amounts, totalAmount],
       })
-      addNotification('Airdrop initiated successfully', { type: 'success' })
     } catch (error) {
       console.error('Error during bulk disburse:', error)
       addNotification('Error initiating airdrop', { type: 'error' })
     }
   }
 
-  // useEffect(() => {
-  //   if (isSuccess) {
-  //     addNotification('Airdrop initiated successfully', { type: 'success' })
-  //   } else if (isError) {
-  //     addNotification(`Airdrop failed: ${error?.message}`, { type: 'error' })
-  //   }
-  // }, [isSuccess, isError, error, addNotification])
+  useEffect(() => {
+    if (isSuccess) {
+      addNotification('Airdrop initiated successfully', { type: 'success' })
+    } else if (isError) {
+      addNotification(`Airdrop failed: ${error?.message}`, { type: 'error' })
+    }
+  }, [isSuccess, isError, error, addNotification])
 
   return (
     <div className='flex flex-col min-h-screen bg-gray-100' style={{ color: '#0052FF' }}>
@@ -124,6 +118,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
             onChange={(value) => setSelectedCriteria(value)}
           />
           <div className='w-full lg:w-2/5 flex flex-col sm:flex-row items-end gap-2'>
+            
             <div className='w-full sm:w-2/3'>
               <label className='block text-sm font-medium mb-1'>Token to Airdrop</label>
               <input
@@ -155,7 +150,40 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
       </div>
 
       <div className='w-full p-6 bg-gray-50 flex-grow'>
-        <Leaderboard initialData={initialData} onAddressesChange={setAddresses} />
+        <div className='mb-4'>
+          <input
+            type='text'
+            placeholder='Search by username'
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className='border border-gray-300 rounded py-2 px-4'
+          />
+          <select
+            value={sortField}
+            onChange={(e) => setSortField(e.target.value)}
+            className='ml-2 border border-gray-300 rounded py-2 px-4'
+          >
+            <option value=''>Sort by</option>
+            <option value='skills_score'>Skills Score</option>
+            <option value='activity_score'>Activity Score</option>
+            <option value='identity_score'>Identity Score</option>
+          </select>
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+            className='ml-2 border border-gray-300 rounded py-2 px-4'
+          >
+            <option value='asc'>Ascending</option>
+            <option value='desc'>Descending</option>
+          </select>
+        </div>
+        <Leaderboard
+          users={users}
+          onAddressesChange={setAddresses}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          totalRecords={totalRecords}
+        />
       </div>
     </div>
   )
