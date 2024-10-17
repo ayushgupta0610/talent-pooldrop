@@ -8,6 +8,9 @@ const redis = new Redis({
   token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN!,
 })
 
+const USERS_PER_PAGE = 50;
+
+
 function safeJsonParse(str: string) {
   try {
     return JSON.parse(str);
@@ -40,8 +43,8 @@ export async function GET(request: Request) {
     // Fetch from Supabase
     const { data, error, count } = await supabase
       .from('talent_protocol')
-      .select('*', { count: 'exact' })
-      .range((page - 1) * 25, page * 25 - 1)
+      .select('main_wallet, passport_id, passport_profile, skills_score, activity_score, identity_score, verified_wallets', { count: 'exact' })
+      .range((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE - 1)
 
     if (error) {
       console.error('Error fetching data from Supabase:', error)
@@ -74,7 +77,7 @@ export async function GET(request: Request) {
       pagination: {
         current_page: page,
         total: count || 0,
-        last_page: Math.ceil((count || 0) / 25)
+        last_page: Math.ceil((count || 0) / USERS_PER_PAGE)
       }
     }
 

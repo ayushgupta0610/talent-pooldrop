@@ -38,7 +38,7 @@ interface LeaderboardProps {
   totalRecords: number;
 }
 
-const USERS_PER_PAGE = 25;
+const USERS_PER_PAGE = 50;
 
 export default function Leaderboard({
   users,
@@ -56,7 +56,7 @@ export default function Leaderboard({
   }, [users, onAddressesChange]);
 
   const formatWalletAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    return `${address?.slice(0, 6)}...${address?.slice(-4)}`;
   };
 
   return (
@@ -67,7 +67,7 @@ export default function Leaderboard({
             <TableCell align="center">Passport ID</TableCell>
             <TableCell align="center">Username</TableCell>
             <TableCell align="center">Bio</TableCell>
-            <TableCell align="center">Location</TableCell>
+            {/* <TableCell align="center">Location</TableCell> */}
             <TableCell align="center">Wallet Address</TableCell>
             <TableCell align="right">Skills Score</TableCell>
             <TableCell align="right">Activity Score</TableCell>
@@ -85,7 +85,7 @@ export default function Leaderboard({
                 </div>
               </TableCell>
               <TableCell align="center">{user.passport_profile.bio}</TableCell>
-              <TableCell align="center">{user.passport_profile.location}</TableCell>
+              {/* <TableCell align="center">{user.passport_profile.location}</TableCell> */}
               <TableCell align="center">
                 <a href={`https://basescan.org/address/${user.main_wallet}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#0052FF' }}>
                   {formatWalletAddress(user.main_wallet)}
@@ -100,10 +100,10 @@ export default function Leaderboard({
         <TableFooter>
           <TableRow>
             <TablePagination
-              rowsPerPageOptions={[USERS_PER_PAGE]}
-              colSpan={8}
+              rowsPerPageOptions={[USERS_PER_PAGE/2, USERS_PER_PAGE]}
+              colSpan={7}
               count={totalRecords}
-              rowsPerPage={USERS_PER_PAGE}
+              rowsPerPage={USERS_PER_PAGE/2}
               page={currentPage - 1}
               onPageChange={handleChangePage}
             />
