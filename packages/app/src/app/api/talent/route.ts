@@ -13,7 +13,6 @@ function safeJsonParse(str: string) {
     return JSON.parse(str);
   } catch (e) {
     console.error('JSON parsing failed:', e);
-    console.error('Attempted to parse:', str);
     return null;
   }
 }
@@ -24,12 +23,10 @@ export async function GET(request: Request) {
     const page = parseInt(url.searchParams.get('currentPage') || '1', 10)
     const redisKey = `talent:page:${page}`
 
-    // console.log('Fetching data for page:', page);
-
     // Try to get data from Redis
     // const cachedData = await redis.get(redisKey)
     // if (cachedData) {
-    //   console.log('Cache hit. Data from Redis:', cachedData);
+    //   console.log('Cache hit. Data from Redis');
     //   const parsedData = safeJsonParse(cachedData as string)
     //   if (parsedData) {
     //     return NextResponse.json(parsedData)
@@ -50,8 +47,6 @@ export async function GET(request: Request) {
       console.error('Error fetching data from Supabase:', error)
       return NextResponse.json({ error: 'Failed to fetch data from database' }, { status: 500 })
     }
-
-    // console.log('Raw data from Supabase:', JSON.stringify(data, null, 2));
 
     const passports: User[] = data.map(user => {
       let passport_profile = user.passport_profile;
@@ -83,11 +78,8 @@ export async function GET(request: Request) {
       }
     }
 
-    // console.log('Processed response:', JSON.stringify(response, null, 2));
-
     // Cache the data in Redis
-    const stringifiedResponse = JSON.stringify(response);
-    console.log('Storing in Redis:', stringifiedResponse);
+    // const stringifiedResponse = JSON.stringify(response);
     // await redis.set(redisKey, stringifiedResponse, { ex: 3600 }) // Cache for 1 hour
 
     return NextResponse.json(response)

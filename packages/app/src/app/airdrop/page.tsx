@@ -32,7 +32,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const { address } = useAccount()
   const { Add: addNotification } = useNotifications()
 
-  const BULK_DISBURSE_ADDRESS = '0x1234567890123456789012345678901234567890' // Replace with actual contract address
+  const BULK_DISBURSE_ADDRESS = '0x32dA4cAaAAd4d4805Df3b044b206Df2ad2eBadFd' // Replace with actual contract address
 
   const { data: tokenDecimals } = useReadContract({
     address: tokenAddress as `0x${string}`,
