@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server'
 import { PassportResponse, User } from '@/utils/types'
-import { Redis } from '@upstash/redis'
+// import { Redis } from '@upstash/redis'
 import { supabase } from '@/lib/supabase'
 
-const redis = new Redis({
-  url: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL!,
-  token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN!,
-})
+// const redis = new Redis({
+//   url: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_URL!,
+//   token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN!,
+// })
 
 const USERS_PER_PAGE = 50;
 
@@ -24,9 +24,9 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const page = parseInt(url.searchParams.get('currentPage') || '1', 10)
-    const sortField = url.searchParams.get('sortField')
+    const sortField = url.searchParams.get('sortField') || 'identity_score'
     const sortOrder = url.searchParams.get('sortOrder') || 'desc'
-    const redisKey = `talent:page:${page}`
+    // const redisKey = `talent:page:${page}`
 
     // Try to get data from Redis
     // const cachedData = await redis.get(redisKey)

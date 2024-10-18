@@ -1,7 +1,6 @@
-"use client"
+'use client'
 import React, { useState, useEffect } from 'react'
 import { Dropdown } from '@/components/Dropdown'
-import { AddressInput } from '@/components/AddressInput'
 import Leaderboard from '@/components/Leaderboard'
 import { PassportResponse, User } from '@/utils/types'
 import { useAccount, useWriteContract, useReadContract } from 'wagmi'
@@ -16,7 +15,7 @@ interface AirdropPageProps {
 
 const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const options = ['Based on score', 'Based on location', 'Based on profile']
-  const criteria = ['Skills Score >= 80', 'Activity Score >= 60', 'Identity Score >= 80']
+  const criteria = ['Skills Score >= 60', 'Activity Score >= 60', 'Identity Score >= 80']
 
   const [addresses, setAddresses] = useState<string[]>([])
   const [selectedCriteria, setSelectedCriteria] = useState<string>('')
@@ -26,8 +25,8 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalRecords, setTotalRecords] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortField, setSortField] = useState('')
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [sortField, setSortField] = useState<'identity_score' | 'activity_score' | 'skills_score'>('identity_score')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
 
   const { address } = useAccount()
   const { Add: addNotification } = useNotifications()
@@ -42,6 +41,15 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
   })
 
   const { writeContract, isPending, isSuccess, isError, error } = useWriteContract()
+
+  const handleSortChange = (field: string) => {
+    if (field === sortField) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field as 'identity_score' | 'activity_score' | 'skills_score');
+      setSortOrder('desc');
+    }
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -150,7 +158,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
       </div>
 
       <div className='w-full p-6 bg-gray-50 flex-grow'>
-        <div className='mb-4'>
+        {/* <div className='mb-4'>
           <input
             type='text'
             placeholder='Search by username'
@@ -176,13 +184,16 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
             <option value='asc'>Ascending</option>
             <option value='desc'>Descending</option>
           </select>
-        </div>
+        </div> */}
         <Leaderboard
           users={users}
           onAddressesChange={setAddresses}
           currentPage={currentPage}
           onPageChange={setCurrentPage}
           totalRecords={totalRecords}
+          sortField={sortField}
+          sortOrder={sortOrder}
+          onSortChange={handleSortChange}
         />
       </div>
     </div>

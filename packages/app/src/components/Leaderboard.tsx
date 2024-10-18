@@ -10,6 +10,7 @@ import {
   TableFooter,
   TablePagination,
   Avatar,
+  TableSortLabel,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { User } from '../utils/types';
@@ -36,6 +37,9 @@ interface LeaderboardProps {
   currentPage: number;
   onPageChange: (page: number) => void;
   totalRecords: number;
+  sortField: string;
+  sortOrder: 'asc' | 'desc';
+  onSortChange: (field: string) => void;
 }
 
 const USERS_PER_PAGE = 50;
@@ -46,6 +50,9 @@ export default function Leaderboard({
   currentPage,
   onPageChange,
   totalRecords,
+  sortField,
+  sortOrder,
+  onSortChange,
 }: LeaderboardProps) {
   const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
     onPageChange(newPage + 1);
@@ -56,7 +63,12 @@ export default function Leaderboard({
   }, [users, onAddressesChange]);
 
   const formatWalletAddress = (address: string) => {
+    if (!address) return '';
     return `${address?.slice(0, 6)}...${address?.slice(-4)}`;
+  };
+
+  const createSortHandler = (field: string) => () => {
+    onSortChange(field);
   };
 
   return (
@@ -69,9 +81,33 @@ export default function Leaderboard({
             <TableCell align="center" style={{ fontWeight: 'bold' }}>Bio</TableCell>
             <TableCell align="center" style={{ fontWeight: 'bold' }}>Location</TableCell>
             <TableCell align="center" style={{ fontWeight: 'bold' }}>Wallet Address</TableCell>
-            <TableCell align="right" style={{ fontWeight: 'bold' }}>Skills Score</TableCell>
-            <TableCell align="right" style={{ fontWeight: 'bold' }}>Activity Score</TableCell>
-            <TableCell align="right" style={{ fontWeight: 'bold' }}>Identity Score</TableCell>
+            <TableCell align="right" style={{ fontWeight: 'bold' }}>
+              <TableSortLabel
+                active={sortField === 'skills_score'}
+                direction={sortField === 'skills_score' ? sortOrder : 'asc'}
+                onClick={createSortHandler('skills_score')}
+              >
+                Skills Score
+              </TableSortLabel>
+            </TableCell>
+            <TableCell align="right" style={{ fontWeight: 'bold' }}>
+              <TableSortLabel
+                active={sortField === 'activity_score'}
+                direction={sortField === 'activity_score' ? sortOrder : 'asc'}
+                onClick={createSortHandler('activity_score')}
+              >
+                Activity Score
+              </TableSortLabel>
+            </TableCell>
+            <TableCell align="right" style={{ fontWeight: 'bold' }}>
+              <TableSortLabel
+                active={sortField === 'identity_score'}
+                direction={sortField === 'identity_score' ? sortOrder : 'asc'}
+                onClick={createSortHandler('identity_score')}
+              >
+                Identity Score
+              </TableSortLabel>
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
