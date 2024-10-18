@@ -8,7 +8,7 @@ const Header = () => {
       <div className='container mx-auto px-4 py-6'>
         <div className='flex justify-between items-center'>
           <Link href='/' className='text-2xl font-bold'>
-            Airdrop Tool
+            Talent Pooldrop
           </Link>
           <div className='flex items-center space-x-4'>
             {' '}
@@ -20,8 +20,8 @@ const Header = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link href='/airdrop' className='hover:text-blue-200'>
-                    Airdrop
+                  <Link href='/Pooldrop' className='hover:text-blue-200'>
+                    Pooldrop
                   </Link>
                 </li>
                 <li>

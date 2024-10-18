@@ -14,7 +14,7 @@ interface AirdropPageProps {
 }
 
 const AirdropPage = ({ initialData }: AirdropPageProps) => {
-  const options = ['Based on score', 'Based on location', 'Based on profile']
+  const options = ['Based on score', 'Based on location', 'To specific users']
   const criteria = ['Skills Score >= 60', 'Activity Score >= 60', 'Identity Score >= 80']
 
   const [addresses, setAddresses] = useState<string[]>([])
@@ -66,9 +66,9 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     fetchUsers()
   }, [currentPage, searchTerm, sortField, sortOrder])
 
-  const handleAirdrop = () => {
+  const handleTransfer = () => {
     if (!tokenAddress || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
-      addNotification('Missing required information for airdrop', { type: 'error' })
+      addNotification('Missing required information for token transfer', { type: 'error' })
       return
     }
 
@@ -98,15 +98,15 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
       })
     } catch (error) {
       console.error('Error during bulk disburse:', error)
-      addNotification('Error initiating airdrop', { type: 'error' })
+      addNotification('Error initiating transfer', { type: 'error' })
     }
   }
 
   useEffect(() => {
     if (isSuccess) {
-      addNotification('Airdrop initiated successfully', { type: 'success' })
+      addNotification('Token transfer initiated successfully', { type: 'success' })
     } else if (isError) {
-      addNotification(`Airdrop failed: ${error?.message}`, { type: 'error' })
+      addNotification(`Transfer failed: ${error?.message}`, { type: 'error' })
     }
   }, [isSuccess, isError, error, addNotification])
 
@@ -115,20 +115,20 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
       <div className='w-full p-6 bg-white shadow-md'>
         <div className='flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4'>
           <Dropdown
-            label='Airdrop Option'
+            label='Pooldrop Option'
             options={options}
             onChange={(value) => console.log(value)}
             disabledOptions={options.slice(1)}
           />
           <Dropdown
-            label='Airdrop Criteria'
+            label='Pooldrop Criteria'
             options={criteria}
             onChange={(value) => setSelectedCriteria(value)}
           />
           <div className='w-full lg:w-2/5 flex flex-col sm:flex-row items-end gap-2'>
             
             <div className='w-full sm:w-2/3'>
-              <label className='block text-sm font-medium mb-1'>Token to Airdrop</label>
+              <label className='block text-sm font-medium mb-1'>Token to transfer</label>
               <input
                 type='text'
                 className='w-full border border-gray-300 rounded py-2 px-4'
@@ -149,9 +149,9 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
             </div>
             <button
               className='w-full sm:w-1/4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-2 sm:mt-0'
-              onClick={handleAirdrop}
+              onClick={handleTransfer}
               disabled={isPending}>
-              {isPending ? 'Processing...' : 'Airdrop'}
+              {isPending ? 'Processing...' : 'Pooldrop'}
             </button>
           </div>
         </div>
