@@ -24,6 +24,8 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url)
     const page = parseInt(url.searchParams.get('currentPage') || '1', 10)
+    const sortField = url.searchParams.get('sortField')
+    const sortOrder = url.searchParams.get('sortOrder') || 'desc'
     const redisKey = `talent:page:${page}`
 
     // Try to get data from Redis
@@ -41,10 +43,25 @@ export async function GET(request: Request) {
     // }
 
     // Fetch from Supabase
-    const { data, error, count } = await supabase
-      .from('talent_protocol')
-      .select('main_wallet, passport_id, passport_profile, skills_score, activity_score, identity_score, verified_wallets', { count: 'exact' })
-      .range((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE - 1)
+    let result;
+    if (sortField === undefined || sortField === '') {
+      let start = new Date().getTime();
+      result = await supabase
+        .from('talent_protocol')
+        .select('main_wallet, passport_id, passport_profile, skills_score, activity_score, identity_score, verified_wallets', { count: 'exact' })
+        .range((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE - 1)
+      console.log('Time to fetch from Supabase: ', new Date().getTime() - start);
+    } else {
+      let start = new Date().getTime();
+      result = await supabase
+        .from('talent_protocol')
+        .select('main_wallet, passport_id, passport_profile, skills_score, activity_score, identity_score, verified_wallets', { count: 'exact' })
+        .order(sortField!, { ascending: sortOrder === 'desc' ? false : true })
+        .range((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE - 1)
+      console.log('Time to fetch from Supabase: ', new Date().getTime() - start);
+    }
+
+    const { data, count, error } = result;
 
     if (error) {
       console.error('Error fetching data from Supabase:', error)

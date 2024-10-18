@@ -64,30 +64,46 @@ export default function Leaderboard({
       <StyledTable size="small" aria-label="leaderboard table">
         <TableHead>
           <TableRow>
-            <TableCell align="center">Passport ID</TableCell>
-            <TableCell align="center">Username</TableCell>
-            <TableCell align="center">Bio</TableCell>
-            {/* <TableCell align="center">Location</TableCell> */}
-            <TableCell align="center">Wallet Address</TableCell>
-            <TableCell align="right">Skills Score</TableCell>
-            <TableCell align="right">Activity Score</TableCell>
-            <TableCell align="right">Identity Score</TableCell>
+            {/* <TableCell align="center">Passport ID</TableCell> */}
+            <TableCell align="center" style={{ fontWeight: 'bold' }}>Username</TableCell>
+            <TableCell align="center" style={{ fontWeight: 'bold' }}>Bio</TableCell>
+            <TableCell align="center" style={{ fontWeight: 'bold' }}>Location</TableCell>
+            <TableCell align="center" style={{ fontWeight: 'bold' }}>Wallet Address</TableCell>
+            <TableCell align="right" style={{ fontWeight: 'bold' }}>Skills Score</TableCell>
+            <TableCell align="right" style={{ fontWeight: 'bold' }}>Activity Score</TableCell>
+            <TableCell align="right" style={{ fontWeight: 'bold' }}>Identity Score</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {users.map((user) => (
             <TableRow key={user.passport_id}>
-              <TableCell align="center">{user.passport_id}</TableCell>
+              {/* <TableCell align="center">{user.passport_id}</TableCell> */}
               <TableCell align="center">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Avatar src={user.passport_profile.image_url} alt={user.passport_profile.display_name} style={{ marginRight: '8px' }} />
-                  {user.passport_profile.display_name}
-                </div>
+                <a 
+                  href={`https://passport.talentprotocol.com/profile/${user.passport_id}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  style={{ textDecoration: 'none', color: '#0052FF', fontWeight: 'bold' }}
+                  onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                  onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Avatar src={user.passport_profile.image_url} alt={user.passport_profile.display_name} style={{ marginRight: '8px' }} />
+                    {user.passport_profile.display_name}
+                  </div>
+                </a>
               </TableCell>
               <TableCell align="center">{user.passport_profile.bio}</TableCell>
-              {/* <TableCell align="center">{user.passport_profile.location}</TableCell> */}
+              <TableCell align="center">{user.passport_profile.location}</TableCell>
               <TableCell align="center">
-                <a href={`https://basescan.org/address/${user.main_wallet}`} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: '#0052FF' }}>
+                <a 
+                  href={`https://basescan.org/address/${user.main_wallet}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  style={{ textDecoration: 'none', color: '#0052FF' }}
+                  onMouseEnter={(e) => e.currentTarget.style.textDecoration = 'underline'}
+                  onMouseLeave={(e) => e.currentTarget.style.textDecoration = 'none'}
+                >
                   {formatWalletAddress(user.main_wallet)}
                 </a>
               </TableCell>
@@ -100,10 +116,10 @@ export default function Leaderboard({
         <TableFooter>
           <TableRow>
             <TablePagination
-              rowsPerPageOptions={[USERS_PER_PAGE/2, USERS_PER_PAGE]}
+              rowsPerPageOptions={[USERS_PER_PAGE]}
               colSpan={7}
               count={totalRecords}
-              rowsPerPage={USERS_PER_PAGE/2}
+              rowsPerPage={USERS_PER_PAGE}
               page={currentPage - 1}
               onPageChange={handleChangePage}
             />
