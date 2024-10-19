@@ -7,7 +7,7 @@ import { useAccount, useWriteContract, useReadContract } from 'wagmi'
 import { parseUnits, formatUnits, erc20Abi } from 'viem'
 import { bulkDisburseABI } from '@/utils/abi'
 import { useNotifications } from '@/context/Notifications'
-import Moralis from 'moralis'; // Import Moralis
+import Moralis from 'moralis' // Import Moralis
 
 interface AirdropPageProps {
   initialData: PassportResponse
@@ -67,21 +67,23 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
         // Check if Moralis is already initialized
         if (!Moralis.Core.isStarted) {
           await Moralis.start({
-            apiKey: process.env.NEXT_PUBLIC_YOUR_MORALIS_API_KEY
+            apiKey: process.env.NEXT_PUBLIC_YOUR_MORALIS_API_KEY,
           })
         }
 
         const response = await Moralis.EvmApi.token.getWalletTokenBalances({
-          chain: "0x2105",
-          address: address
+          chain: '0x2105',
+          address: address,
         })
 
-        const options: TokenOption[] = response.raw.map((token: { token_address: string; symbol: string; balance: string; decimals: number }) => ({
-          address: token.token_address,
-          symbol: token.symbol,
-          balance: token.balance,
-          formattedBalance: formatUnits(BigInt(token.balance), token.decimals)
-        }))
+        const options: TokenOption[] = response.raw.map(
+          (token: { token_address: string; symbol: string; balance: string; decimals: number }) => ({
+            address: token.token_address,
+            symbol: token.symbol,
+            balance: token.balance,
+            formattedBalance: formatUnits(BigInt(token.balance), token.decimals),
+          })
+        )
 
         setTokenOptions(options)
       } catch (error) {
@@ -163,21 +165,19 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
             onChange={(value) => console.log(value)}
             disabledOptions={options.slice(1)}
           />
+          <Dropdown label='Pooldrop Criteria' options={criteria} onChange={(value) => setSelectedCriteria(value)} />
           <Dropdown
-            label='Pooldrop Criteria'
-            options={criteria}
-            onChange={(value) => setSelectedCriteria(value)}
+            label='Select Token'
+            options={tokenOptions.map((token) => `${token.symbol} (Balance: ${token.formattedBalance})`)}
+            onChange={(value) => {
+              const selectedToken = tokenOptions.find(
+                (token) => `${token.symbol} (Balance: ${token.formattedBalance})` === value
+              )
+              if (selectedToken) {
+                setTokenAddress(selectedToken.address)
+              }
+            }}
           />
-          <Dropdown
-        label='Select Token'
-        options={tokenOptions.map(token => `${token.symbol} (Balance: ${token.formattedBalance})`)}
-        onChange={(value) => {
-          const selectedToken = tokenOptions.find(token => `${token.symbol} (Balance: ${token.formattedBalance})` === value)
-          if (selectedToken) {
-            setTokenAddress(selectedToken.address)
-          }
-        }}
-      />
           <div className='w-full lg:w-2/5 flex flex-col sm:flex-row items-end gap-2'>
             <div className='w-full sm:w-2/3'>
               <label className='block text-sm font-medium mb-1'>Token Amount</label>
