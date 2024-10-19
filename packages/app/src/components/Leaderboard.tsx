@@ -78,13 +78,12 @@ export default function Leaderboard({
   const handlePageInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.target.value)
     // if (value > 0 && value <= Math.ceil(totalRecords / USERS_PER_PAGE)) {
-      setPageInput(value)
+    setPageInput(value)
     // }
   }
 
   const handleJumpToPage = () => {
-    if (pageInput > 0 && pageInput <= Math.ceil(totalRecords / USERS_PER_PAGE))
-      onPageChange(pageInput - 1)
+    if (pageInput > 0 && pageInput <= Math.ceil(totalRecords / USERS_PER_PAGE)) onPageChange(pageInput - 1)
   }
 
   return (
@@ -106,7 +105,9 @@ export default function Leaderboard({
               Wallet Address
             </TableCell>
             <TableCell align='center' style={{ fontWeight: 'bold' }}>
-              <Tooltip title="Talent Protocol aggregates a wide range of reputation data points, and calculates a dynamic Builder Score that represents a user's reputation as an onchain builder" arrow>
+              <Tooltip
+                title="Talent Protocol aggregates a wide range of reputation data points, and calculates a dynamic Builder Score that represents a user's reputation as an onchain builder"
+                arrow>
                 <span>
                   <TableSortLabel
                     active={sortField === 'score'}
@@ -118,7 +119,9 @@ export default function Leaderboard({
               </Tooltip>
             </TableCell>
             <TableCell align='center' style={{ fontWeight: 'bold' }}>
-              <Tooltip title="Activity score help separate trusted actors and value-add members, from bad actors, farmers and users only capturing value." arrow>
+              <Tooltip
+                title='Activity score help separate trusted actors and value-add members, from bad actors, farmers and users only capturing value.'
+                arrow>
                 <span>
                   <TableSortLabel
                     active={sortField === 'activity_score'}
@@ -130,7 +133,7 @@ export default function Leaderboard({
               </Tooltip>
             </TableCell>
             <TableCell align='center' style={{ fontWeight: 'bold' }}>
-              <Tooltip title="Identity credentials help separate humans from sybils, bots and fake accounts. " arrow>
+              <Tooltip title='Identity credentials help separate humans from sybils, bots and fake accounts. ' arrow>
                 <span>
                   <TableSortLabel
                     active={sortField === 'identity_score'}
@@ -196,7 +199,7 @@ export default function Leaderboard({
             />
             <TableCell>
               <input
-                type="number"
+                type='number'
                 value={pageInput || 1}
                 onChange={handlePageInputChange}
                 style={{ width: '4em', marginRight: '8px' }}

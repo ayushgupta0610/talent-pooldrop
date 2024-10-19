@@ -47,20 +47,18 @@ export async function GET(request: Request) {
       let start = new Date().getTime()
       result = await supabase
         .from('talent_protocol')
-        .select(
-          'main_wallet, passport_id, passport_profile, score, activity_score, identity_score, verified_wallets',
-          { count: 'exact' }
-        )
+        .select('main_wallet, passport_id, passport_profile, score, activity_score, identity_score, verified_wallets', {
+          count: 'exact',
+        })
         .range((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE - 1)
       console.log('Time to fetch from Supabase: ', new Date().getTime() - start)
     } else {
       let start = new Date().getTime()
       result = await supabase
         .from('talent_protocol')
-        .select(
-          'main_wallet, passport_id, passport_profile, score, activity_score, identity_score, verified_wallets',
-          { count: 'exact' }
-        )
+        .select('main_wallet, passport_id, passport_profile, score, activity_score, identity_score, verified_wallets', {
+          count: 'exact',
+        })
         .order(sortField!, { ascending: sortOrder === 'desc' ? false : true })
         .range((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE - 1)
       console.log('Time to fetch from Supabase: ', new Date().getTime() - start)

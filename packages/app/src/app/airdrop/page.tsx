@@ -13,7 +13,12 @@ interface AirdropPageProps {
   initialData: PassportResponse
 }
 
-interface Token { token_address: string; symbol: string; balance: string; decimals: number }
+interface Token {
+  token_address: string
+  symbol: string
+  balance: string
+  decimals: number
+}
 
 interface TokenOption {
   address: string
@@ -79,19 +84,17 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
         })
 
         const formatBalanceWithCommas = (token: Token) => {
-          let balance = formatUnits(BigInt(token.balance), token.decimals);
+          let balance = formatUnits(BigInt(token.balance), token.decimals)
 
-          return Number(balance).toLocaleString('en-US', { maximumFractionDigits: 2 });
+          return Number(balance).toLocaleString('en-US', { maximumFractionDigits: 2 })
         }
 
-        const options: TokenOption[] = response.raw.map(
-          (token: Token) => ({
-            address: token.token_address,
-            symbol: token.symbol,
-            balance: token.balance,
-            formattedBalance: formatBalanceWithCommas(token),
-          })
-        )
+        const options: TokenOption[] = response.raw.map((token: Token) => ({
+          address: token.token_address,
+          symbol: token.symbol,
+          balance: token.balance,
+          formattedBalance: formatBalanceWithCommas(token),
+        }))
 
         setTokenOptions(options)
       } catch (error) {

@@ -33,7 +33,7 @@ export interface User {
     tags: string[]
   }
   score: number
-  skills_score: number
+  // skills_score: number
   // socials_calculated_at: string
   // verified: boolean
   verified_wallets: string[]
