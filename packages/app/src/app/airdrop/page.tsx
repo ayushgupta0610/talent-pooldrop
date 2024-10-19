@@ -13,6 +13,8 @@ interface AirdropPageProps {
   initialData: PassportResponse
 }
 
+interface Token { token_address: string; symbol: string; balance: string; decimals: number }
+
 interface TokenOption {
   address: string
   symbol: string
@@ -22,7 +24,7 @@ interface TokenOption {
 
 const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const options = ['Based on score', 'Based on location', 'To specific users']
-  const criteria = ['Skills Score >= 60', 'Activity Score >= 60', 'Identity Score >= 80']
+  const criteria = ['Builder Score >= 100', 'Activity Score >= 60', 'Identity Score >= 80']
 
   const [addresses, setAddresses] = useState<string[]>([])
   const [selectedCriteria, setSelectedCriteria] = useState<string>('')
@@ -32,7 +34,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalRecords, setTotalRecords] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortField, setSortField] = useState<'identity_score' | 'activity_score' | 'skills_score'>('identity_score')
+  const [sortField, setSortField] = useState<'identity_score' | 'activity_score' | 'score'>('identity_score')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [tokenOptions, setTokenOptions] = useState<TokenOption[]>([])
 
@@ -54,7 +56,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     if (field === sortField) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
-      setSortField(field as 'identity_score' | 'activity_score' | 'skills_score')
+      setSortField(field as 'identity_score' | 'activity_score' | 'score')
       setSortOrder('desc')
     }
   }
@@ -76,12 +78,18 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
           address: address,
         })
 
+        const formatBalanceWithCommas = (token: Token) => {
+          let balance = formatUnits(BigInt(token.balance), token.decimals);
+
+          return Number(balance).toLocaleString('en-US', { maximumFractionDigits: 2 });
+        }
+
         const options: TokenOption[] = response.raw.map(
-          (token: { token_address: string; symbol: string; balance: string; decimals: number }) => ({
+          (token: Token) => ({
             address: token.token_address,
             symbol: token.symbol,
             balance: token.balance,
-            formattedBalance: formatUnits(BigInt(token.balance), token.decimals),
+            formattedBalance: formatBalanceWithCommas(token),
           })
         )
 
@@ -120,7 +128,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     const filteredUsers = users.filter((user) => {
       switch (selectedCriteria) {
         case criteria[0]:
-          return user.skills_score >= 80
+          return user.score >= 80
         case criteria[1]:
           return user.activity_score >= 60
         case criteria[2]:
@@ -214,7 +222,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
             className='ml-2 border border-gray-300 rounded py-2 px-4'
           >
             <option value=''>Sort by</option>
-            <option value='skills_score'>Skills Score</option>
+            <option value='score'>Builder Score</option>
             <option value='activity_score'>Activity Score</option>
             <option value='identity_score'>Identity Score</option>
           </select>

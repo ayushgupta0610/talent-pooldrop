@@ -32,7 +32,7 @@ export interface User {
     name: string
     tags: string[]
   }
-  // score: number
+  score: number
   skills_score: number
   // socials_calculated_at: string
   // verified: boolean

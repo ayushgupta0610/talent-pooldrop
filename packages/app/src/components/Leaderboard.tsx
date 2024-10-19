@@ -11,9 +11,11 @@ import {
   TablePagination,
   Avatar,
   TableSortLabel,
+  Tooltip,
 } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import { User } from '../utils/types'
+import { useState } from 'react'
 
 const StyledTableContainer = styled(TableContainer)(({ theme }) => ({
   '& .MuiTableCell-root': {
@@ -54,6 +56,8 @@ export default function Leaderboard({
   sortOrder,
   onSortChange,
 }: LeaderboardProps) {
+  const [pageInput, setPageInput] = useState(currentPage)
+
   const handleChangePage = (event: React.MouseEvent<HTMLButtonElement> | null, newPage: number) => {
     onPageChange(newPage + 1)
   }
@@ -69,6 +73,18 @@ export default function Leaderboard({
 
   const createSortHandler = (field: string) => () => {
     onSortChange(field)
+  }
+
+  const handlePageInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(event.target.value)
+    // if (value > 0 && value <= Math.ceil(totalRecords / USERS_PER_PAGE)) {
+      setPageInput(value)
+    // }
+  }
+
+  const handleJumpToPage = () => {
+    if (pageInput > 0 && pageInput <= Math.ceil(totalRecords / USERS_PER_PAGE))
+      onPageChange(pageInput - 1)
   }
 
   return (
@@ -89,29 +105,41 @@ export default function Leaderboard({
             <TableCell align='center' style={{ fontWeight: 'bold' }}>
               Wallet Address
             </TableCell>
-            <TableCell align='right' style={{ fontWeight: 'bold' }}>
-              <TableSortLabel
-                active={sortField === 'skills_score'}
-                direction={sortField === 'skills_score' ? sortOrder : 'asc'}
-                onClick={createSortHandler('skills_score')}>
-                Skills Score
-              </TableSortLabel>
+            <TableCell align='center' style={{ fontWeight: 'bold' }}>
+              <Tooltip title="Talent Protocol aggregates a wide range of reputation data points, and calculates a dynamic Builder Score that represents a user's reputation as an onchain builder" arrow>
+                <span>
+                  <TableSortLabel
+                    active={sortField === 'score'}
+                    direction={sortField === 'score' ? sortOrder : 'asc'}
+                    onClick={createSortHandler('score')}>
+                    Builder Score
+                  </TableSortLabel>
+                </span>
+              </Tooltip>
             </TableCell>
-            <TableCell align='right' style={{ fontWeight: 'bold' }}>
-              <TableSortLabel
-                active={sortField === 'activity_score'}
-                direction={sortField === 'activity_score' ? sortOrder : 'asc'}
-                onClick={createSortHandler('activity_score')}>
-                Activity Score
-              </TableSortLabel>
+            <TableCell align='center' style={{ fontWeight: 'bold' }}>
+              <Tooltip title="Activity score help separate trusted actors and value-add members, from bad actors, farmers and users only capturing value." arrow>
+                <span>
+                  <TableSortLabel
+                    active={sortField === 'activity_score'}
+                    direction={sortField === 'activity_score' ? sortOrder : 'asc'}
+                    onClick={createSortHandler('activity_score')}>
+                    Activity Score
+                  </TableSortLabel>
+                </span>
+              </Tooltip>
             </TableCell>
-            <TableCell align='right' style={{ fontWeight: 'bold' }}>
-              <TableSortLabel
-                active={sortField === 'identity_score'}
-                direction={sortField === 'identity_score' ? sortOrder : 'asc'}
-                onClick={createSortHandler('identity_score')}>
-                Identity Score
-              </TableSortLabel>
+            <TableCell align='center' style={{ fontWeight: 'bold' }}>
+              <Tooltip title="Identity credentials help separate humans from sybils, bots and fake accounts. " arrow>
+                <span>
+                  <TableSortLabel
+                    active={sortField === 'identity_score'}
+                    direction={sortField === 'identity_score' ? sortOrder : 'asc'}
+                    onClick={createSortHandler('identity_score')}>
+                    Identity Score
+                  </TableSortLabel>
+                </span>
+              </Tooltip>
             </TableCell>
           </TableRow>
         </TableHead>
@@ -150,9 +178,9 @@ export default function Leaderboard({
                   {formatWalletAddress(user.main_wallet)}
                 </a>
               </TableCell>
-              <TableCell align='right'>{user.skills_score}</TableCell>
-              <TableCell align='right'>{user.activity_score}</TableCell>
-              <TableCell align='right'>{user.identity_score}</TableCell>
+              <TableCell align='center'>{user.score}</TableCell>
+              <TableCell align='center'>{user.activity_score}</TableCell>
+              <TableCell align='center'>{user.identity_score}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -160,12 +188,21 @@ export default function Leaderboard({
           <TableRow>
             <TablePagination
               rowsPerPageOptions={[USERS_PER_PAGE]}
-              colSpan={7}
+              colSpan={6}
               count={totalRecords}
               rowsPerPage={USERS_PER_PAGE}
               page={currentPage - 1}
               onPageChange={handleChangePage}
             />
+            <TableCell>
+              <input
+                type="number"
+                value={pageInput || 1}
+                onChange={handlePageInputChange}
+                style={{ width: '4em', marginRight: '8px' }}
+              />
+              <button onClick={handleJumpToPage}>Get</button>
+            </TableCell>
           </TableRow>
         </TableFooter>
       </StyledTable>

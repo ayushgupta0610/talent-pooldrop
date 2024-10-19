@@ -32,6 +32,7 @@ createAppKit({
     analytics: true, // Optional - defaults to your Cloud configuration
     email: true,
     onramp: true,
+    socials: [],
   },
 })
 

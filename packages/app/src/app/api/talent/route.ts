@@ -48,7 +48,7 @@ export async function GET(request: Request) {
       result = await supabase
         .from('talent_protocol')
         .select(
-          'main_wallet, passport_id, passport_profile, skills_score, activity_score, identity_score, verified_wallets',
+          'main_wallet, passport_id, passport_profile, score, activity_score, identity_score, verified_wallets',
           { count: 'exact' }
         )
         .range((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE - 1)
@@ -58,7 +58,7 @@ export async function GET(request: Request) {
       result = await supabase
         .from('talent_protocol')
         .select(
-          'main_wallet, passport_id, passport_profile, skills_score, activity_score, identity_score, verified_wallets',
+          'main_wallet, passport_id, passport_profile, score, activity_score, identity_score, verified_wallets',
           { count: 'exact' }
         )
         .order(sortField!, { ascending: sortOrder === 'desc' ? false : true })
