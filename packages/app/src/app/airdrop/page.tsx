@@ -4,13 +4,20 @@ import { Dropdown } from '@/components/Dropdown'
 import Leaderboard from '@/components/Leaderboard'
 import { PassportResponse, User } from '@/utils/types'
 import { useAccount, useWriteContract, useReadContract } from 'wagmi'
-import { parseUnits } from 'viem'
+import { parseUnits, formatUnits, erc20Abi } from 'viem'
 import { bulkDisburseABI } from '@/utils/abi'
-import { erc20Abi } from 'viem'
 import { useNotifications } from '@/context/Notifications'
+import Moralis from 'moralis'; // Import Moralis
 
 interface AirdropPageProps {
   initialData: PassportResponse
+}
+
+interface TokenOption {
+  address: string
+  symbol: string
+  balance: string
+  formattedBalance: string
 }
 
 const AirdropPage = ({ initialData }: AirdropPageProps) => {
@@ -27,6 +34,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortField, setSortField] = useState<'identity_score' | 'activity_score' | 'skills_score'>('identity_score')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
+  const [tokenOptions, setTokenOptions] = useState<TokenOption[]>([])
 
   const { address } = useAccount()
   const { Add: addNotification } = useNotifications()
@@ -50,6 +58,39 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
       setSortOrder('desc')
     }
   }
+
+  useEffect(() => {
+    async function fetchTokenBalances() {
+      if (!address) return
+
+      try {
+        // Check if Moralis is already initialized
+        if (!Moralis.Core.isStarted) {
+          await Moralis.start({
+            apiKey: process.env.NEXT_PUBLIC_YOUR_MORALIS_API_KEY
+          })
+        }
+
+        const response = await Moralis.EvmApi.token.getWalletTokenBalances({
+          chain: "0x2105",
+          address: address
+        })
+
+        const options: TokenOption[] = response.raw.map((token: { token_address: string; symbol: string; balance: string; decimals: number }) => ({
+          address: token.token_address,
+          symbol: token.symbol,
+          balance: token.balance,
+          formattedBalance: formatUnits(BigInt(token.balance), token.decimals)
+        }))
+
+        setTokenOptions(options)
+      } catch (error) {
+        console.error('Error fetching token balances:', error)
+      }
+    }
+
+    fetchTokenBalances()
+  }, [address])
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -110,7 +151,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     } else if (isError) {
       addNotification(`Transfer failed: ${error?.message}`, { type: 'error' })
     }
-  }, [isSuccess, isError, error, addNotification])
+  }, [isSuccess, isError, error])
 
   return (
     <div className='flex flex-col min-h-screen bg-gray-100' style={{ color: '#0052FF' }}>
@@ -122,19 +163,23 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
             onChange={(value) => console.log(value)}
             disabledOptions={options.slice(1)}
           />
-          <Dropdown label='Pooldrop Criteria' options={criteria} onChange={(value) => setSelectedCriteria(value)} />
+          <Dropdown
+            label='Pooldrop Criteria'
+            options={criteria}
+            onChange={(value) => setSelectedCriteria(value)}
+          />
+          <Dropdown
+        label='Select Token'
+        options={tokenOptions.map(token => `${token.symbol} (Balance: ${token.formattedBalance})`)}
+        onChange={(value) => {
+          const selectedToken = tokenOptions.find(token => `${token.symbol} (Balance: ${token.formattedBalance})` === value)
+          if (selectedToken) {
+            setTokenAddress(selectedToken.address)
+          }
+        }}
+      />
           <div className='w-full lg:w-2/5 flex flex-col sm:flex-row items-end gap-2'>
             <div className='w-full sm:w-2/3'>
-              <label className='block text-sm font-medium mb-1'>Token to transfer</label>
-              <input
-                type='text'
-                className='w-full border border-gray-300 rounded py-2 px-4'
-                value={tokenAddress}
-                onChange={(e) => setTokenAddress(e.target.value)}
-                placeholder='Enter token address'
-              />
-            </div>
-            <div className='w-full sm:w-1/3'>
               <label className='block text-sm font-medium mb-1'>Token Amount</label>
               <input
                 type='number'
