@@ -9,7 +9,9 @@
     "start": "next start",
     "lint": "next lint --fix",
     "prettier": "prettier './src' --write",
-    "wagmi": "wagmi generate"
+    "wagmi": "wagmi generate",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\""
   },
   "husky": {
     "hooks": {

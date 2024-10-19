@@ -44,17 +44,19 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
 
   const handleSortChange = (field: string) => {
     if (field === sortField) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
     } else {
-      setSortField(field as 'identity_score' | 'activity_score' | 'skills_score');
-      setSortOrder('desc');
+      setSortField(field as 'identity_score' | 'activity_score' | 'skills_score')
+      setSortOrder('desc')
     }
-  };
+  }
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await fetch(`/api/talent?currentPage=${currentPage}&search=${searchTerm}&sortField=${sortField}&sortOrder=${sortOrder}`)
+        const res = await fetch(
+          `/api/talent?currentPage=${currentPage}&search=${searchTerm}&sortField=${sortField}&sortOrder=${sortOrder}`
+        )
         if (!res.ok) throw new Error('Failed to fetch data')
         const data: PassportResponse = await res.json()
         setUsers(data.passports)
@@ -88,7 +90,7 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     const recipients = filteredUsers.map((user) => user.main_wallet)
     const amounts = recipients.map(() => parseUnits(tokenAmount, tokenDecimals))
     const totalAmount = parseUnits((Number(tokenAmount) * recipients.length).toString(), tokenDecimals)
-   
+
     try {
       writeContract({
         address: BULK_DISBURSE_ADDRESS,
@@ -120,13 +122,8 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
             onChange={(value) => console.log(value)}
             disabledOptions={options.slice(1)}
           />
-          <Dropdown
-            label='Pooldrop Criteria'
-            options={criteria}
-            onChange={(value) => setSelectedCriteria(value)}
-          />
+          <Dropdown label='Pooldrop Criteria' options={criteria} onChange={(value) => setSelectedCriteria(value)} />
           <div className='w-full lg:w-2/5 flex flex-col sm:flex-row items-end gap-2'>
-            
             <div className='w-full sm:w-2/3'>
               <label className='block text-sm font-medium mb-1'>Token to transfer</label>
               <input

@@ -8,15 +8,14 @@ import { supabase } from '@/lib/supabase'
 //   token: process.env.NEXT_PUBLIC_UPSTASH_REDIS_REST_TOKEN!,
 // })
 
-const USERS_PER_PAGE = 50;
-
+const USERS_PER_PAGE = 50
 
 function safeJsonParse(str: string) {
   try {
-    return JSON.parse(str);
+    return JSON.parse(str)
   } catch (e) {
-    console.error('JSON parsing failed:', e);
-    return null;
+    console.error('JSON parsing failed:', e)
+    return null
   }
 }
 
@@ -43,59 +42,65 @@ export async function GET(request: Request) {
     // }
 
     // Fetch from Supabase
-    let result;
+    let result
     if (sortField === undefined || sortField === '') {
-      let start = new Date().getTime();
+      let start = new Date().getTime()
       result = await supabase
         .from('talent_protocol')
-        .select('main_wallet, passport_id, passport_profile, skills_score, activity_score, identity_score, verified_wallets', { count: 'exact' })
+        .select(
+          'main_wallet, passport_id, passport_profile, skills_score, activity_score, identity_score, verified_wallets',
+          { count: 'exact' }
+        )
         .range((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE - 1)
-      console.log('Time to fetch from Supabase: ', new Date().getTime() - start);
+      console.log('Time to fetch from Supabase: ', new Date().getTime() - start)
     } else {
-      let start = new Date().getTime();
+      let start = new Date().getTime()
       result = await supabase
         .from('talent_protocol')
-        .select('main_wallet, passport_id, passport_profile, skills_score, activity_score, identity_score, verified_wallets', { count: 'exact' })
+        .select(
+          'main_wallet, passport_id, passport_profile, skills_score, activity_score, identity_score, verified_wallets',
+          { count: 'exact' }
+        )
         .order(sortField!, { ascending: sortOrder === 'desc' ? false : true })
         .range((page - 1) * USERS_PER_PAGE, page * USERS_PER_PAGE - 1)
-      console.log('Time to fetch from Supabase: ', new Date().getTime() - start);
+      console.log('Time to fetch from Supabase: ', new Date().getTime() - start)
     }
 
-    const { data, count, error } = result;
+    const { data, count, error } = result
 
     if (error) {
       console.error('Error fetching data from Supabase:', error)
       return NextResponse.json({ error: 'Failed to fetch data from database' }, { status: 500 })
     }
 
-    const passports: User[] = data.map(user => {
-      let passport_profile = user.passport_profile;
-      let verified_wallets = user.verified_wallets;
+    const passports: User[] = data.map((user: User) => {
+      let passport_profile = user.passport_profile
+      let verified_wallets = user.verified_wallets
 
       if (typeof passport_profile === 'string') {
-        passport_profile = safeJsonParse(passport_profile) || {};
+        passport_profile = safeJsonParse(passport_profile) || {}
       }
 
       if (typeof verified_wallets === 'string') {
-        verified_wallets = safeJsonParse(verified_wallets) || [];
+        verified_wallets = safeJsonParse(verified_wallets) || []
       } else if (!Array.isArray(verified_wallets)) {
-        verified_wallets = [];
+        verified_wallets = []
       }
 
       return {
         ...user,
         passport_profile,
-        verified_wallets
-      };
-    });
+        verified_wallets,
+      }
+    })
 
     const response: PassportResponse = {
       passports,
       pagination: {
         current_page: page,
         total: count || 0,
-        last_page: Math.ceil((count || 0) / USERS_PER_PAGE)
-      }
+        last_page: Math.ceil((count || 0) / USERS_PER_PAGE),
+      },
     }
 
     // Cache the data in Redis
