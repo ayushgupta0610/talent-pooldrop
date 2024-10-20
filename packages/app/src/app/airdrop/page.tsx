@@ -49,6 +49,7 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
 
   const { address } = useAccount()
   const { Add: addNotification } = useNotifications()
+  const [initialFetch, setInitialFetch] = useState(false)
 
   // const { data: tokenDecimals } = useReadContract({
   //   address: selectedToken?.address as `0x${string}`,
@@ -148,9 +149,9 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
     }
   }
 
-  const handleApproveBlur = () => {
+  const handleTokenAmount = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTokenAmount(e.target.value)
     console.log('allowance: ', allowance)
-    // Get token decimals from token address
     const totalAmount = parseUnits((Number(tokenAmount) * addresses.length).toString(), selectedToken!.decimals)
     console.log('totalAmount: ', totalAmount)
     setIsApproved(allowance! >= totalAmount)
@@ -216,6 +217,10 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        if (users && !initialFetch) {
+          setInitialFetch(true)
+          return // Skip fetching if initialData is populated
+        }
         const res = await fetch(
           `/api/talent?currentPage=${currentPage}&search=${searchTerm}&sortField=${sortField}&sortOrder=${sortOrder}`
         )
@@ -274,7 +279,7 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
                 type='number'
                 className='w-full border border-gray-300 rounded py-2 px-4'
                 value={tokenAmount}
-                onChange={(e) => setTokenAmount(e.target.value)}
+                onChange={handleTokenAmount}
                 placeholder='Per user'
               />
             </div>
@@ -282,7 +287,6 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
               <button
                 className='w-full sm:w-1/4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-2 sm:mt-0'
                 onClick={handleApprove}
-                onBlur={handleApproveBlur}
                 disabled={isApprovePending || isWaitingForTransaction}>
                 {isApprovePending || isWaitingForTransaction ? 'Approving...' : 'Approve'}
               </button>
