@@ -50,11 +50,11 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   const { address } = useAccount()
   const { Add: addNotification } = useNotifications()
 
-  const { data: tokenDecimals } = useReadContract({
-    address: selectedToken?.address as `0x${string}`,
-    abi: erc20Abi,
-    functionName: 'decimals',
-  })
+  // const { data: tokenDecimals } = useReadContract({
+  //   address: selectedToken?.address as `0x${string}`,
+  //   abi: erc20Abi,
+  //   functionName: 'decimals',
+  // })
 
   const { data: allowance } = useReadContract({
     address: selectedToken?.address as `0x${string}`,
@@ -80,12 +80,12 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   }
 
   const handleApprove = async () => {
-    if (!selectedToken?.address || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
+    if (!selectedToken?.address || !tokenAmount || addresses.length === 0 || !selectedToken.decimals) {
       addNotification('Missing required information for approval', { type: 'error' })
       return
     }
 
-    const totalAmount = parseUnits((Number(tokenAmount) * addresses.length).toString(), tokenDecimals)
+    const totalAmount = parseUnits((Number(tokenAmount) * addresses.length).toString(), selectedToken.decimals)
 
     try {
       await writeApprove({
@@ -103,7 +103,7 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   }
 
   const handleTransfer = () => {
-    if (!selectedToken?.address || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
+    if (!selectedToken?.address || !tokenAmount || addresses.length === 0 || !selectedToken.decimals) {
       addNotification('Missing required information for pooldrop', { type: 'error' })
       return
     }
@@ -127,8 +127,11 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   const confirmTransfer = async () => {
     setIsModalOpen(false)
     const recipients = selectedUsers.map((user) => user.main_wallet)
-    const amounts = recipients.map(() => parseUnits(tokenAmount, tokenDecimals as number))
-    const totalAmount = parseUnits((Number(tokenAmount) * recipients.length).toString(), tokenDecimals as number)
+    const amounts = recipients.map(() => parseUnits(tokenAmount, selectedToken?.decimals as number))
+    const totalAmount = parseUnits(
+      (Number(tokenAmount) * recipients.length).toString(),
+      selectedToken?.decimals as number
+    )
 
     try {
       await writeTransfer({
