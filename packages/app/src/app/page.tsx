@@ -11,7 +11,7 @@ export default async function Home() {
     throw new Error('TALENT_API_KEY is not defined in the environment variables.')
   }
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000' // Default to localhost if not set
-  const res = await fetch(`/api/talent?currentPage=1&sortField=identity_score&sortOrder=desc`, { headers }) // Use the relative API URL
+  const res = await fetch(`${apiUrl}/api/talent?currentPage=1&sortField=identity_score&sortOrder=desc`, { headers }) // Use the relative API URL
   const data: PassportResponse = await res.json()
   return <AirdropPage initialData={data} />
 }
