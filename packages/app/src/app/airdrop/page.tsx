@@ -3,16 +3,17 @@ import React, { useState, useEffect } from 'react'
 import { Dropdown } from '@/components/Dropdown'
 import Leaderboard from '@/components/Leaderboard'
 import { PassportResponse, User } from '@/utils/types'
-import { useAccount, useWriteContract, useReadContract } from 'wagmi'
+import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt } from 'wagmi'
 import { parseUnits, formatUnits, erc20Abi } from 'viem'
 import { bulkDisburseABI } from '@/utils/abi'
 import { useNotifications } from '@/context/Notifications'
-import Moralis from 'moralis' // Import Moralis
+import Moralis from 'moralis'
+import TransferConfirmationModal from '@/components/TransferConfirmationModal'
 
+// Define your props interface
 interface AirdropPageProps {
   initialData: PassportResponse
 }
-
 interface Token {
   token_address: string
   symbol: string
@@ -27,15 +28,17 @@ interface TokenOption {
   formattedBalance: string
 }
 
-const AirdropPage = ({ initialData }: AirdropPageProps) => {
-  const options = ['Based on score', 'Based on location', 'To specific users']
-  const criteria = ['Builder Score >= 100', 'Activity Score >= 60', 'Identity Score >= 80']
+const options = ['Based on score', 'Based on location', 'To specific users']
+const criteria = ['Builder Score >= 100', 'Activity Score >= 50', 'Identity Score >= 80']
+const BULK_DISBURSE_ADDRESS = '0x32dA4cAaAAd4d4805Df3b044b206Df2ad2eBadFd'
 
+// Define your component
+const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   const [addresses, setAddresses] = useState<string[]>([])
-  const [selectedCriteria, setSelectedCriteria] = useState<string>('')
+  const [selectedCriteria, setSelectedCriteria] = useState<string>('Builder Score >= 100')
   const [tokenAddress, setTokenAddress] = useState<string>('')
   const [tokenAmount, setTokenAmount] = useState<string>('')
-  const [users, setUsers] = useState<User[]>(initialData?.passports || [])
+  const [users, setUsers] = useState<User[]>(props.initialData?.passports || [])
   const [currentPage, setCurrentPage] = useState(1)
   const [totalRecords, setTotalRecords] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
@@ -43,19 +46,32 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [tokenOptions, setTokenOptions] = useState<TokenOption[]>([])
 
+  const [isApproved, setIsApproved] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([])
+
   const { address } = useAccount()
   const { Add: addNotification } = useNotifications()
-
-  const BULK_DISBURSE_ADDRESS = '0x32dA4cAaAAd4d4805Df3b044b206Df2ad2eBadFd' // Replace with actual contract address
 
   const { data: tokenDecimals } = useReadContract({
     address: tokenAddress as `0x${string}`,
     abi: erc20Abi,
     functionName: 'decimals',
-    // enabled: Boolean(tokenAddress),
   })
 
-  const { writeContract, isPending, isSuccess, isError, error } = useWriteContract()
+  const { data: allowance } = useReadContract({
+    address: tokenAddress as `0x${string}`,
+    abi: erc20Abi,
+    functionName: 'allowance',
+    args: [address!, BULK_DISBURSE_ADDRESS],
+  })
+
+  const { writeContract: writeApprove, isPending: isApprovePending, data: approveData } = useWriteContract()
+  const { writeContract: writeTransfer, isPending: isTransferPending, data: transferData } = useWriteContract()
+
+  const { isLoading: isWaitingForTransaction, isSuccess: isTransactionSuccessful } = useWaitForTransactionReceipt({
+    hash: approveData || transferData,
+  })
 
   const handleSortChange = (field: string) => {
     if (field === sortField) {
@@ -66,12 +82,93 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
     }
   }
 
+  const handleApprove = async () => {
+    if (!tokenAddress || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
+      addNotification('Missing required information for approval', { type: 'error' })
+      return
+    }
+
+    const totalAmount = parseUnits((Number(tokenAmount) * addresses.length).toString(), tokenDecimals)
+
+    try {
+      const approveTxn = await writeApprove({
+        address: tokenAddress as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'approve',
+        args: [BULK_DISBURSE_ADDRESS, totalAmount],
+      })
+      console.log('approveTxn: ', approveTxn)
+
+      // addNotification('Approval transaction sent', {
+      //   type: 'info',
+      //   href: `https://basescan.org/tx/${writeApprove.hash}`,
+      // })
+    } catch (error) {
+      console.error('Error during approval:', error)
+      addNotification('Error initiating approval', { type: 'error' })
+    }
+  }
+
+  const handleTransfer = () => {
+    if (!tokenAddress || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
+      addNotification('Missing required information for pooldrop', { type: 'error' })
+      return
+    }
+
+    const filteredUsers = users.filter((user) => {
+      switch (selectedCriteria) {
+        case criteria[0]:
+          return user.score >= 100
+        case criteria[1]:
+          return user.activity_score >= 50
+        case criteria[2]:
+          return user.identity_score >= 80
+        default:
+          return false
+      }
+    })
+    setSelectedUsers(filteredUsers)
+    setIsModalOpen(true)
+  }
+
+  const confirmTransfer = async () => {
+    setIsModalOpen(false)
+    const recipients = selectedUsers.map((user) => user.main_wallet)
+    const amounts = recipients.map(() => parseUnits(tokenAmount, tokenDecimals as number))
+    const totalAmount = parseUnits((Number(tokenAmount) * recipients.length).toString(), tokenDecimals as number)
+
+    try {
+      const transferTxn = await writeTransfer({
+        address: BULK_DISBURSE_ADDRESS,
+        abi: bulkDisburseABI,
+        functionName: 'bulkDisburse',
+        args: [tokenAddress, recipients, amounts, totalAmount],
+      })
+      console.log('writeTransferTxn: ', transferTxn)
+
+      // addNotification('Transfer transaction sent', { type: 'info', href: `https://basescan.org/tx/${hash}` })
+    } catch (error) {
+      console.error('Error during bulk disburse:', error)
+      addNotification('Error initiating transfer', { type: 'error' })
+    }
+  }
+
+  // useEffect(() => {
+  //   if (isTransactionSuccessful) {
+  //     if (isApprovePending) {
+  //       setIsApproved(true)
+  //       addNotification('Approval successful', { type: 'success' })
+  //     } else if (isTransferPending) {
+  //       addNotification('Transfer successful', { type: 'success' })
+  //     }
+  //   }
+  // }, [isTransactionSuccessful, isApprovePending, isTransferPending])
+
   useEffect(() => {
     async function fetchTokenBalances() {
       if (!address) return
 
       try {
-        // Check if Moralis is already initialized
         if (!Moralis.Core.isStarted) {
           await Moralis.start({
             apiKey: process.env.NEXT_PUBLIC_YOUR_MORALIS_API_KEY,
@@ -83,19 +180,19 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
           address: address,
         })
 
-        const formatBalanceWithCommas = (token: Token) => {
+        const formatBalanceWithCommas = (token: any) => {
           let balance = formatUnits(BigInt(token.balance), token.decimals)
-
           return Number(balance).toLocaleString('en-US', { maximumFractionDigits: 2 })
         }
 
-        const options: TokenOption[] = response.raw.map((token: Token) => ({
+        const options: TokenOption[] = response.raw.map((token: any) => ({
           address: token.token_address,
           symbol: token.symbol,
           balance: token.balance,
           formattedBalance: formatBalanceWithCommas(token),
         }))
 
+        setTokenAddress(options[0].address)
         setTokenOptions(options)
       } catch (error) {
         console.error('Error fetching token balances:', error)
@@ -115,56 +212,32 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
         const data: PassportResponse = await res.json()
         setUsers(data.passports)
         setTotalRecords(data.pagination.total)
+        const filteredUsers = data.passports.filter((user) => {
+          switch (selectedCriteria) {
+            case criteria[0]:
+              return user.score >= 100
+            case criteria[1]:
+              return user.activity_score >= 50
+            case criteria[2]:
+              return user.identity_score >= 80
+            default:
+              return false
+          }
+        })
+        setAddresses(filteredUsers.map((user) => user.main_wallet))
       } catch (error) {
         console.error('Error fetching data:', error)
       }
     }
     fetchUsers()
-  }, [currentPage, searchTerm, sortField, sortOrder])
-
-  const handleTransfer = () => {
-    if (!tokenAddress || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
-      addNotification('Missing required information for token transfer', { type: 'error' })
-      return
-    }
-
-    const filteredUsers = users.filter((user) => {
-      switch (selectedCriteria) {
-        case criteria[0]:
-          return user.score >= 80
-        case criteria[1]:
-          return user.activity_score >= 60
-        case criteria[2]:
-          return user.identity_score >= 80
-        default:
-          return false
-      }
-    })
-
-    const recipients = filteredUsers.map((user) => user.main_wallet)
-    const amounts = recipients.map(() => parseUnits(tokenAmount, tokenDecimals))
-    const totalAmount = parseUnits((Number(tokenAmount) * recipients.length).toString(), tokenDecimals)
-
-    try {
-      writeContract({
-        address: BULK_DISBURSE_ADDRESS,
-        abi: bulkDisburseABI,
-        functionName: 'bulkDisburse',
-        args: [tokenAddress, recipients, amounts, totalAmount],
-      })
-    } catch (error) {
-      console.error('Error during bulk disburse:', error)
-      addNotification('Error initiating transfer', { type: 'error' })
-    }
-  }
+  }, [currentPage, searchTerm, sortField, sortOrder, selectedCriteria])
 
   useEffect(() => {
-    if (isSuccess) {
-      addNotification('Token transfer initiated successfully', { type: 'success' })
-    } else if (isError) {
-      addNotification(`Transfer failed: ${error?.message}`, { type: 'error' })
+    if (allowance && tokenAmount && tokenDecimals) {
+      const totalAmount = parseUnits((Number(tokenAmount) * addresses.length).toString(), tokenDecimals)
+      setIsApproved(allowance >= totalAmount)
     }
-  }, [isSuccess, isError, error])
+  }, [allowance, tokenAmount, addresses, tokenDecimals])
 
   return (
     <div className='flex flex-col min-h-screen bg-gray-100' style={{ color: '#0052FF' }}>
@@ -200,44 +273,26 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
                 placeholder='Per user'
               />
             </div>
-            <button
-              className='w-full sm:w-1/4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-2 sm:mt-0'
-              onClick={handleTransfer}
-              disabled={isPending}>
-              {isPending ? 'Processing...' : 'Pooldrop'}
-            </button>
+            {!isApproved ? (
+              <button
+                className='w-full sm:w-1/4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-2 sm:mt-0'
+                onClick={handleApprove}
+                disabled={isApprovePending || isWaitingForTransaction}>
+                {isApprovePending || isWaitingForTransaction ? 'Approving...' : 'Approve'}
+              </button>
+            ) : (
+              <button
+                className='w-full sm:w-1/4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-2 sm:mt-0'
+                onClick={handleTransfer}
+                disabled={isTransferPending || isWaitingForTransaction}>
+                {isTransferPending || isWaitingForTransaction ? 'Processing...' : 'Pooldrop'}
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <div className='w-full p-6 bg-gray-50 flex-grow'>
-        {/* <div className='mb-4'>
-          <input
-            type='text'
-            placeholder='Search by username'
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className='border border-gray-300 rounded py-2 px-4'
-          />
-          <select
-            value={sortField}
-            onChange={(e) => setSortField(e.target.value)}
-            className='ml-2 border border-gray-300 rounded py-2 px-4'
-          >
-            <option value=''>Sort by</option>
-            <option value='score'>Builder Score</option>
-            <option value='activity_score'>Activity Score</option>
-            <option value='identity_score'>Identity Score</option>
-          </select>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
-            className='ml-2 border border-gray-300 rounded py-2 px-4'
-          >
-            <option value='asc'>Ascending</option>
-            <option value='desc'>Descending</option>
-          </select>
-        </div> */}
         <Leaderboard
           users={users}
           onAddressesChange={setAddresses}
@@ -249,8 +304,19 @@ const AirdropPage = ({ initialData }: AirdropPageProps) => {
           onSortChange={handleSortChange}
         />
       </div>
+
+      <TransferConfirmationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={confirmTransfer}
+        users={selectedUsers}
+        tokenAmount={tokenAmount}
+        tokenSymbol={tokenOptions.find((t) => t.address === tokenAddress)?.symbol || ''}
+        criteria={selectedCriteria}
+      />
     </div>
   )
 }
 
+// Export the component as default
 export default AirdropPage
