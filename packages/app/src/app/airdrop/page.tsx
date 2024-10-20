@@ -37,7 +37,7 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   const [tokenAmount, setTokenAmount] = useState<string>('')
   const [users, setUsers] = useState<User[]>(props.initialData?.passports || [])
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalRecords, setTotalRecords] = useState(0)
+  const [totalRecords, setTotalRecords] = useState(props.initialData?.pagination.total || 0)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortField, setSortField] = useState<'identity_score' | 'activity_score' | 'score'>('identity_score')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')

@@ -6,4 +6,4 @@ export const SITE_DESCRIPTION =
 export const SITE_URL = 'https://vercel.app'
 
 export const SOCIAL_TWITTER = 'ayushgupta0610'
-export const SOCIAL_GITHUB = 'ayushgupta0610/talent-tool'
+export const SOCIAL_GITHUB = 'ayushgupta0610/talent-pooldrop'
