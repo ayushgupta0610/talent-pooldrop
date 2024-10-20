@@ -14,29 +14,26 @@ import TransferConfirmationModal from '@/components/TransferConfirmationModal'
 interface AirdropPageProps {
   initialData: PassportResponse
 }
-interface Token {
-  token_address: string
-  symbol: string
-  balance: string
-  decimals: number
-}
 
 interface TokenOption {
   address: string
   symbol: string
   balance: string
+  decimals: number
   formattedBalance: string
 }
 
 const options = ['Based on score', 'Based on location', 'To specific users']
 const criteria = ['Builder Score >= 100', 'Activity Score >= 50', 'Identity Score >= 80']
 const BULK_DISBURSE_ADDRESS = '0x32dA4cAaAAd4d4805Df3b044b206Df2ad2eBadFd'
+const TOKEN_ADDRESS = '0x42500d1Ea986a5B636349Ec6B01e593348885EaE'
 
 // Define your component
 const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   const [addresses, setAddresses] = useState<string[]>([])
   const [selectedCriteria, setSelectedCriteria] = useState<string>('Builder Score >= 100')
-  const [tokenAddress, setTokenAddress] = useState<string>('')
+  // const [tokenAddress, setTokenAddress] = useState<string>('')
+  const [selectedToken, setToken] = useState<TokenOption | null>(null)
   const [tokenAmount, setTokenAmount] = useState<string>('')
   const [users, setUsers] = useState<User[]>(props.initialData?.passports || [])
   const [currentPage, setCurrentPage] = useState(1)
@@ -54,23 +51,23 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   const { Add: addNotification } = useNotifications()
 
   const { data: tokenDecimals } = useReadContract({
-    address: tokenAddress as `0x${string}`,
+    address: selectedToken?.address as `0x${string}`,
     abi: erc20Abi,
     functionName: 'decimals',
   })
 
   const { data: allowance } = useReadContract({
-    address: tokenAddress as `0x${string}`,
+    address: selectedToken?.address as `0x${string}`,
     abi: erc20Abi,
     functionName: 'allowance',
     args: [address!, BULK_DISBURSE_ADDRESS],
   })
 
-  const { writeContract: writeApprove, isPending: isApprovePending, data: approveData } = useWriteContract()
-  const { writeContract: writeTransfer, isPending: isTransferPending, data: transferData } = useWriteContract()
+  const { writeContract: writeApprove, isPending: isApprovePending, data: approveHash } = useWriteContract()
+  const { writeContract: writeTransfer, isPending: isTransferPending, data: transferHash } = useWriteContract()
 
   const { isLoading: isWaitingForTransaction, isSuccess: isTransactionSuccessful } = useWaitForTransactionReceipt({
-    hash: approveData || transferData,
+    hash: approveHash || transferHash,
   })
 
   const handleSortChange = (field: string) => {
@@ -83,7 +80,7 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   }
 
   const handleApprove = async () => {
-    if (!tokenAddress || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
+    if (!selectedToken?.address || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
       addNotification('Missing required information for approval', { type: 'error' })
       return
     }
@@ -91,18 +88,14 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
     const totalAmount = parseUnits((Number(tokenAmount) * addresses.length).toString(), tokenDecimals)
 
     try {
-      const approveTxn = await writeApprove({
-        address: tokenAddress as `0x${string}`,
+      await writeApprove({
+        address: selectedToken.address as `0x${string}`,
         abi: erc20Abi,
         functionName: 'approve',
         args: [BULK_DISBURSE_ADDRESS, totalAmount],
       })
-      console.log('approveTxn: ', approveTxn)
 
-      // addNotification('Approval transaction sent', {
-      //   type: 'info',
-      //   href: `https://basescan.org/tx/${writeApprove.hash}`,
-      // })
+      addNotification('Approval transaction initiated', { type: 'info' })
     } catch (error) {
       console.error('Error during approval:', error)
       addNotification('Error initiating approval', { type: 'error' })
@@ -110,7 +103,7 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
   }
 
   const handleTransfer = () => {
-    if (!tokenAddress || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
+    if (!selectedToken?.address || !tokenAmount || addresses.length === 0 || !tokenDecimals) {
       addNotification('Missing required information for pooldrop', { type: 'error' })
       return
     }
@@ -138,31 +131,44 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
     const totalAmount = parseUnits((Number(tokenAmount) * recipients.length).toString(), tokenDecimals as number)
 
     try {
-      const transferTxn = await writeTransfer({
+      await writeTransfer({
         address: BULK_DISBURSE_ADDRESS,
         abi: bulkDisburseABI,
         functionName: 'bulkDisburse',
-        args: [tokenAddress, recipients, amounts, totalAmount],
+        args: [selectedToken?.address, recipients, amounts, totalAmount],
       })
-      console.log('writeTransferTxn: ', transferTxn)
 
-      // addNotification('Transfer transaction sent', { type: 'info', href: `https://basescan.org/tx/${hash}` })
+      addNotification('Transfer transaction initiated', { type: 'info' })
     } catch (error) {
       console.error('Error during bulk disburse:', error)
       addNotification('Error initiating transfer', { type: 'error' })
     }
   }
 
-  // useEffect(() => {
-  //   if (isTransactionSuccessful) {
-  //     if (isApprovePending) {
-  //       setIsApproved(true)
-  //       addNotification('Approval successful', { type: 'success' })
-  //     } else if (isTransferPending) {
-  //       addNotification('Transfer successful', { type: 'success' })
-  //     }
-  //   }
-  // }, [isTransactionSuccessful, isApprovePending, isTransferPending])
+  const handleApproveBlur = () => {
+    console.log('allowance: ', allowance)
+    // Get token decimals from token address
+    const totalAmount = parseUnits((Number(tokenAmount) * addresses.length).toString(), selectedToken!.decimals)
+    console.log('totalAmount: ', totalAmount)
+    setIsApproved(allowance! >= totalAmount)
+  }
+
+  useEffect(() => {
+    if (isTransactionSuccessful) {
+      if (approveHash && !isApproved) {
+        setIsApproved(true)
+        addNotification('Approval transaction completed', {
+          type: 'success',
+          href: `https://basescan.org/tx/${approveHash}`,
+        })
+      } else if (transferHash) {
+        addNotification('Transfer transaction completed', {
+          type: 'success',
+          href: `https://basescan.org/tx/${transferHash}`,
+        })
+      }
+    }
+  }, [isTransactionSuccessful, approveHash, transferHash])
 
   useEffect(() => {
     async function fetchTokenBalances() {
@@ -189,10 +195,12 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
           address: token.token_address,
           symbol: token.symbol,
           balance: token.balance,
+          decimals: token.decimals,
           formattedBalance: formatBalanceWithCommas(token),
         }))
 
-        setTokenAddress(options[0].address)
+        // setTokenAddress(options[0].address)
+        setToken(options[0])
         setTokenOptions(options)
       } catch (error) {
         console.error('Error fetching token balances:', error)
@@ -232,13 +240,6 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
     fetchUsers()
   }, [currentPage, searchTerm, sortField, sortOrder, selectedCriteria])
 
-  useEffect(() => {
-    if (allowance && tokenAmount && tokenDecimals) {
-      const totalAmount = parseUnits((Number(tokenAmount) * addresses.length).toString(), tokenDecimals)
-      setIsApproved(allowance >= totalAmount)
-    }
-  }, [allowance, tokenAmount, addresses, tokenDecimals])
-
   return (
     <div className='flex flex-col min-h-screen bg-gray-100' style={{ color: '#0052FF' }}>
       <div className='w-full p-6 bg-white shadow-md'>
@@ -258,7 +259,8 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
                 (token) => `${token.symbol} (Balance: ${token.formattedBalance})` === value
               )
               if (selectedToken) {
-                setTokenAddress(selectedToken.address)
+                setToken(selectedToken)
+                // setTokenAddress(selectedToken.address)
               }
             }}
           />
@@ -277,6 +279,7 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
               <button
                 className='w-full sm:w-1/4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mt-2 sm:mt-0'
                 onClick={handleApprove}
+                onBlur={handleApproveBlur}
                 disabled={isApprovePending || isWaitingForTransaction}>
                 {isApprovePending || isWaitingForTransaction ? 'Approving...' : 'Approve'}
               </button>
@@ -311,7 +314,7 @@ const AirdropPage: React.FC<AirdropPageProps> = (props) => {
         onConfirm={confirmTransfer}
         users={selectedUsers}
         tokenAmount={tokenAmount}
-        tokenSymbol={tokenOptions.find((t) => t.address === tokenAddress)?.symbol || ''}
+        tokenSymbol={selectedToken?.symbol || ''}
         criteria={selectedCriteria}
       />
     </div>
